@@ -47,6 +47,9 @@ class TaskMetadata:
     # Optional fields - Git integration
     git_commit: bool = False  # Whether to create git commits after each round
 
+    # Optional fields - Parallel execution
+    isolate: bool = False  # Enable MCP session isolation (sets LEAN_PROJECT_PATH)
+
     # Auto-generated fields
     created_at: datetime = field(default_factory=datetime.now)
     task_id: str = field(default="")  # Auto-generated unique ID
@@ -87,8 +90,17 @@ class TaskMetadata:
         """Get the path to check for lean files."""
         return self.target_path
 
+    def _find_lean_project_root(self) -> Optional[Path]:
+        """Walk up from target_path to find the Lean project root (contains lean-toolchain)."""
+        search = self.target_path if self.target_path.is_dir() else self.target_path.parent
+        while search != search.parent:
+            if (search / "lean-toolchain").is_file():
+                return search
+            search = search.parent
+        return None
+
     def build_env(self) -> dict:
-        """Build environment variables (including MCP_LOG_DIR and MCP_LOG_NAME)."""
+        """Build environment variables (including MCP_LOG_DIR, MCP_LOG_NAME, LEAN_PROJECT_PATH)."""
         env = os.environ.copy()
         if self.mcp_log_dir:
             # Ensure directory exists
@@ -96,6 +108,10 @@ class TaskMetadata:
             env["MCP_LOG_DIR"] = str(self.mcp_log_dir)
         if self.mcp_log_name:
             env["MCP_LOG_NAME"] = self.mcp_log_name
+        if self.isolate:
+            project_root = self._find_lean_project_root()
+            if project_root:
+                env["LEAN_PROJECT_PATH"] = str(project_root)
         return env
 
     def to_dict(self) -> dict:
@@ -119,6 +135,7 @@ class TaskMetadata:
             "track_statements": self.track_statements,
             "on_statement_change": self.on_statement_change,
             "git_commit": self.git_commit,
+            "isolate": self.isolate,
             "created_at": self.created_at.isoformat(),
         }
 
@@ -150,6 +167,7 @@ class TaskMetadata:
             track_statements=data.get("track_statements", True),
             on_statement_change=data.get("on_statement_change", "warn"),
             git_commit=data.get("git_commit", False),
+            isolate=data.get("isolate", False),
             created_at=created_at,
             task_id=data.get("task_id", ""),
         )
