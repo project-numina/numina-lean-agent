@@ -1,0 +1,24 @@
+# Test config for parallel Putnam proving
+# Run with: python -m scripts.run_claude batch scripts/test_putnam.yaml --parallel --max-workers 2
+
+defaults:
+  task_type: file
+  prompt_file: /mnt/nvme1/zihao/numina/numina-lean-agent/prompts/prompt_complete_file.txt
+  cwd: /mnt/nvme1/zihao/numina
+  check_after_complete: true
+  allow_sorry: false
+  permission_mode: bypassPermissions
+  result_dir: /mnt/nvme1/zihao/numina/numina-lean-agent/results/test_putnam
+  mcp_log_dir: /mnt/nvme1/zihao/numina/numina-lean-agent/mcp_logs
+  track_statements: true
+  on_statement_change: warn
+  isolate: true
+
+tasks:
+  - target_path: /mnt/nvme1/zihao/numina/LiveProveBench/LiveProveBench/PutnamBench2025/putnam_2025_b1.lean
+    max_rounds: 15
+    mcp_log_name: putnam_2025_b1
+
+  - target_path: /mnt/nvme1/zihao/numina/LiveProveBench/LiveProveBench/PutnamBench2025/putnam_2025_a2.lean
+    max_rounds: 15
+    mcp_log_name: putnam_2025_a2
