@@ -2,12 +2,22 @@
 """Search Mathlib theorems semantically using Lean Finder."""
 import argparse
 import json
+import logging
 import re
 import sys
 import urllib.request
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 
 def search(query: str, num_results: int = 5) -> None:
+    logger.info("leanfinder.search called: num_results=%d query=%r", num_results, query)
     try:
         headers = {
             "User-Agent": "numina-lean-agent/0.1",
@@ -34,10 +44,13 @@ def search(query: str, num_results: int = 5) -> None:
                 })
 
         if results:
+            logger.info("leanfinder.search succeeded: %d results", len(results))
             print(json.dumps(results, indent=2, ensure_ascii=False))
         else:
+            logger.info("leanfinder.search: no mathlib4 results found")
             print("No mathlib4 results found.")
     except Exception as e:
+        logger.exception("leanfinder.search failed: %s", e)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

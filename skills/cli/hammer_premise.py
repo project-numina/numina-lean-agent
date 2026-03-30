@@ -2,12 +2,22 @@
 """Search premises by proof state using Lean Hammer premise search."""
 import argparse
 import json
+import logging
 import os
 import sys
 import urllib.request
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 
 def search(goal: str, num_results: int = 32) -> None:
+    logger.info("hammer_premise.search called: num_results=%d goal_len=%d", num_results, len(goal))
     try:
         base_url = os.getenv("LEAN_HAMMER_URL", "http://leanpremise.net")
         data = json.dumps({
@@ -30,8 +40,10 @@ def search(goal: str, num_results: int = 32) -> None:
             results = json.loads(response.read())
 
         names = [result["name"] for result in results]
+        logger.info("hammer_premise.search succeeded: %d results", len(names))
         print(json.dumps(names, indent=2, ensure_ascii=False))
     except Exception as e:
+        logger.exception("hammer_premise.search failed: %s", e)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

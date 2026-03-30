@@ -25,7 +25,7 @@ This file adds proof-agent-specific rules on top of those common foundations.
 **Your code MUST compile without errors when you exit.**
 
 ### Rules
-1. **All code must compile**: `lean_diagnostic_messages` returns no severity-1 errors
+1. **All code must compile**: **axle-check** (`python skills/cli/axle.py check`) returns no severity-1 errors
 2. **NEVER use `axiom`**: Using `axiom` is FORBIDDEN. Use `sorry` instead.
 3. **If cannot complete a proof**:
    - Identify the **smallest** stuck part
@@ -58,7 +58,7 @@ lemma foo : P := by
 ```
 
 ### Before Exiting
-1. Run `lean_diagnostic_messages` on file
+1. Run **axle-check** on file (`python skills/cli/axle.py check FILE --environment lean-4.28.0`)
 2. If ANY error (severity 1): fix it or sorry the minimal stuck part
 3. Verify file compiles cleanly
 
@@ -107,7 +107,7 @@ lemma foo : P := by
 ┌─────────────────────────────────────────────────────────────────┐
 │  BEFORE WRITING ANY LEAN CODE, YOU MUST CONSULT GEMINI FIRST!   │
 │                                                                 │
-│  Use: discussion_partner or gemini_informal_prover              │
+│  Use: discussion-partner or informal-prover (skills/cli/)       │
 │                                                                 │
 │  Ask Gemini for:                                                │
 │  1. High-level proof strategy                                   │
@@ -211,7 +211,7 @@ lemma baz (n : ℕ) (h : n < 4) : R n := by
 - `fin_cases` / `interval_cases`
 - Manual exhaustive case splits
 
-**YOU MUST** call `discussion_partner` with this query:
+**YOU MUST** call **discussion-partner** (`python skills/cli/discussion_partner.py`) with this query:
 
 ```
 "I'm about to prove this goal by enumeration/case analysis:
@@ -387,7 +387,7 @@ tmp file: PutnamLean/tmp_base_case.lean  ← ADD THIS FIRST!
 lemma base_case (n : ℕ) : f 0 = 1 := sorry
 ```
 
-**Verify**: Run `lean_diagnostic_messages` on the original file to ensure it still compiles.
+**Verify**: Run **axle-check** on the original file to ensure it still compiles.
 
 #### Step 2: Create Tmp File (AFTER updating original)
 
@@ -459,7 +459,7 @@ Clean up after success!
 
 ### Checkpoint 0: Before Any Code (MANDATORY)
 
-**Use**: `discussion_partner` or `gemini_informal_prover`
+**Use**: `python skills/cli/discussion_partner.py` or `python skills/cli/informal_prover.py`
 
 **Query**:
 ```
@@ -481,7 +481,7 @@ Please provide:
 
 ### Checkpoint 2: Attempt 2 (Early Guidance)
 
-**Use**: `discussion_partner`
+**Use**: `python skills/cli/discussion_partner.py`
 
 **Query**:
 ```
@@ -490,7 +490,7 @@ Please provide:
 [paste lemma statement]
 
 Current proof state:
-[paste from lean_goal]
+[paste from axle-check lean_messages]
 
 I've tried 2 approaches so far:
 1. [approach 1]: [result/error]
@@ -506,7 +506,7 @@ Can you suggest:
 
 ### Checkpoint 4: Attempt 4 (Alternative Approaches)
 
-**Use**: `discussion_partner`
+**Use**: `python skills/cli/discussion_partner.py`
 
 **Query**:
 ```
@@ -527,7 +527,7 @@ None of these worked. Can you suggest completely different approaches or angles 
 
 ### Checkpoint 8: Attempt 8 (Decomposition)
 
-**Use**: `gemini_informal_prover`
+**Use**: `python skills/cli/informal_prover.py`
 
 **Query**:
 ```
@@ -545,7 +545,7 @@ Can you break this down into 2-3 smaller sub-lemmas that would be easier to prov
 
 ### Checkpoint 16: Attempt 16 (Library Search Assistance)
 
-**Use**: `discussion_partner`
+**Use**: `python skills/cli/discussion_partner.py`
 
 **Query**:
 ```
@@ -554,8 +554,8 @@ Can you break this down into 2-3 smaller sub-lemmas that would be easier to prov
 [paste lemma]
 
 I've searched mathlib with:
-- leandex: [queries tried]
-- loogle: [patterns tried]
+- leandex (`python skills/cli/leandex.py`): [queries tried]
+- loogle (`python skills/cli/loogle.py`): [patterns tried]
 
 But haven't found the right lemma. Can you suggest:
 1. More specific mathlib search terms
@@ -567,7 +567,7 @@ But haven't found the right lemma. Can you suggest:
 
 ### Checkpoint 32: Attempt 32 (Optimization/Simplification)
 
-**Use**: `gemini_code_golf` or `discussion_partner`
+**Use**: `python skills/cli/code_golf.py` or `python skills/cli/discussion_partner.py`
 
 **Query**:
 ```
@@ -607,27 +607,22 @@ Can you suggest a simpler or more direct way to structure this proof?"
 
 **Tools** (use in this order):
 
-1. **lean_leandex** (FIRST CHOICE - semantic search)
+1. **leandex** (FIRST CHOICE - semantic search): `python skills/cli/leandex.py QUERY`
    ```
-   Query: "[natural language OR Lean term]"
    Examples:
-   - "power of -1 alternates between 1 and -1"
-   - "(-1)^(n+1) = -(-1)^n"
-   - "bijection preserves cardinality"
+   - python skills/cli/leandex.py "power of -1 alternates between 1 and -1"
+   - python skills/cli/leandex.py "(-1)^(n+1) = -(-1)^n"
+   - python skills/cli/leandex.py "bijection preserves cardinality"
    ```
 
-2. **lean_loogle** (SECOND CHOICE - type pattern matching)
+2. **loogle** (SECOND CHOICE - type pattern matching): `python skills/cli/loogle.py QUERY`
    ```
-   Query: "[Lean type pattern with ?wildcards]"
    Examples:
-   - "(-1 : ?R) ^ (?n + 1)"
-   - "?f (?x + ?y) = ?f ?x + ?f ?y"
+   - python skills/cli/loogle.py "(-1 : ?R) ^ (?n + 1)"
+   - python skills/cli/loogle.py "?f (?x + ?y) = ?f ?x + ?f ?y"
    ```
 
-3. **lean_local_search** (fast confirmation)
-   ```
-   Query: "lemma_name_prefix"
-   ```
+3. **Grep/Glob** (fast local confirmation in current project)
 
 **Pattern for 10 attempts**:
 - Attempt 1-4: leandex with different natural language phrasings
@@ -659,13 +654,10 @@ Can you suggest a simpler or more direct way to structure this proof?"
 - `simp_rw [lemmas]` - rewrite then simplify
 - `norm_cast` - normalize casts between types
 
-**Use `lean_multi_attempt`** to try 3-5 tactics in parallel:
+**Try 3-5 tactic variations** by editing the file and running **axle-check** after each:
 ```lean
-Snippet 1: hint
-Snippet 2: grind
-Snippet 3: omega
-Snippet 4: simp; omega
-Snippet 5: norm_cast; ring
+-- Try each of these in turn:
+hint / grind / omega / simp; omega / norm_cast; ring
 ```
 
 ### Category 3: Structural Approaches (10 attempts minimum)
@@ -724,7 +716,7 @@ suffices [stronger statement] by [derive goal from this]
 [prove the sufficient condition]
 ```
 
-**Approach C: Extract helper lemma**
+**Approach C: Extract helper lemma (manual)**
 ```lean
 /- (by claude)
 State: ❌ todo
@@ -733,6 +725,16 @@ Attempts: 0/20
 -/
 lemma parent_lemma_helper (args) : goal := sorry
 ```
+
+**Approach D: Sorrifier workflow (automated extraction)**
+
+When a proof is broken or too complex and you want to isolate the failing part automatically:
+1. Replace the failing tactic with `sorry`
+2. Run **axle-check** to confirm the file compiles (warnings OK, zero errors)
+3. Run `python skills/cli/axle.py sorry2lemma FILE --environment lean-4.28.0 --names THEOREM --reconstruct-callsite`
+4. Run **axle-check** to verify the extracted lemma + reconstructed call site compiles
+
+This automatically captures local context variables, generates a standalone lemma above the theorem, and replaces the sorry with a call to the new lemma. See `skills/sorrifier/SKILL.md` for the full protocol.
 
 ---
 
@@ -765,17 +767,17 @@ Is N == 0, 2, 4, 8, 16, or 32?
 ### Step 4: Implement Approach (in tmp file!)
 
 **Before coding**:
-- Run `lean_goal` to see current proof state
-- If goal looks classic → search leandex
+- Run **axle-check** to see current proof state and errors
+- If goal looks classic → search with leandex
 - Always try hint/grind first
 
 **During coding**:
 - Work in tmp file
-- Use `lean_multi_attempt` for variations
+- Try tactic variations and run **axle-check** after each
 - Pick what makes most progress
 
 **After coding**:
-- Run `lean_diagnostic_messages` to verify
+- Run **axle-check** to verify
 - If error, analyze carefully
 - If success, prepare to copy back!
 
@@ -831,7 +833,7 @@ After attempts 10, 20, 30, 40:
 
 1. **Copy proof from tmp file to original**
 2. **Delete tmp file**
-3. **Verify with `lean_diagnostic_messages`**
+3. **Verify with axle-check**
 4. **Update BLUEPRINT**
 5. **Complete agent log**
 6. **Report to Coordinator**
@@ -864,30 +866,38 @@ Before even THINKING about giving up:
 
 ## Tool Usage Reference
 
-### Lean MCP Tools
+All tools are CLI scripts in `skills/cli/`. For full parameters, read `skills/<category>/reference-<tool>.md`.
 
-**High-frequency** (use liberally):
-- `lean_goal`: After every tactic, before every attempt
-- `lean_diagnostic_messages`: After every code change
-- `lean_multi_attempt`: For trying 3-5 variations simultaneously
-- `lean_local_search`: Before using any declaration
+### Verification (use liberally)
 
-**Search tools**:
-- `lean_leandex`: PRIMARY - semantic search
-- `lean_loogle`: Type pattern matching
-- `lean_local_search`: Fast confirmation
+| Tool | CLI | When to use |
+|------|-----|-------------|
+| **axle-check** | `python skills/cli/axle.py check FILE --environment lean-4.28.0` | After every code change |
+| **axle-verify-proof** | `python skills/cli/axle.py verify-proof STMT PROOF --environment lean-4.28.0` | To verify proof matches statement |
+| **axle-repair** | `python skills/cli/axle.py repair-proofs FILE --environment lean-4.28.0` | When close but small errors remain |
 
-**Understanding tools**:
-- `lean_file_outline`: Understand file structure
-- `lean_hover_info`: Get documentation on terms
-- `lean_completions`: Explore available identifiers
+### Search tools
 
-### Gemini MCP Tools
+| Tool | CLI | When to use |
+|------|-----|-------------|
+| **leandex** | `python skills/cli/leandex.py QUERY` | PRIMARY - semantic search (max 5 parallel) |
+| **loogle** | `python skills/cli/loogle.py QUERY` | Type pattern matching |
+| **Grep/Glob** | built-in | Fast local confirmation in current project |
 
-**Checkpoints** (use at specific attempts):
-- `discussion_partner`: Attempts 0, 2, 4, 16
-- `gemini_informal_prover`: Attempts 0, 8
-- `gemini_code_golf`: Attempt 32
+### LLM tools (Gemini checkpoints)
+
+| Tool | CLI | When to use |
+|------|-----|-------------|
+| **discussion-partner** | `python skills/cli/discussion_partner.py QUESTION` | Attempts 0, 2, 4, 16 |
+| **informal-prover** | `python skills/cli/informal_prover.py PROBLEM` | Attempts 0, 8 |
+| **code-golf** | `python skills/cli/code_golf.py LEAN_CODE` | Attempt 32 |
+
+### Code transform tools
+
+| Tool | CLI | When to use |
+|------|-----|-------------|
+| **sorrifier** | See `skills/sorrifier/SKILL.md` | Isolate broken steps into standalone lemmas |
+| **axle-sorry2lemma** | `python skills/cli/axle.py sorry2lemma FILE --environment lean-4.28.0 --reconstruct-callsite` | Extract sorry into standalone lemma |
 
 ---
 

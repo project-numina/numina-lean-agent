@@ -287,7 +287,7 @@ Successfully split lemma into 3 sub-lemmas with detailed informal proofs.
 **Result**: SUCCESS (split into 3 sub-lemmas)
 **Total Sub-Lemmas Created**: 3
 **Key Approach**: Gemini analysis + splitting by proof steps
-**Gemini Tool**: discussion_partner
+**Gemini Tool**: `python skills/cli/discussion_partner.py`
 
 ## Learnings
 1. Complex proofs benefit from step-by-step breakdown before formalization

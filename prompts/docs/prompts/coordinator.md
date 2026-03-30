@@ -168,7 +168,7 @@ Budget: Y attempts
 Follow the proof agent protocol:
 1. Work in tmp file
 2. Try hint/grind first
-3. Search leandex before proving
+3. Search with leandex (`python skills/cli/leandex.py`) before proving
 4. Try all 5 categories
 5. Create agent log
 6. Update BLUEPRINT when done"
@@ -314,6 +314,16 @@ Simple:   Proof Agent
 Medium:   Sketch Agent → Proof Agent
 Complex:  Blueprint Agent → Sketch Agent → Proof Agent
 ```
+
+### When to Use the Sorrifier Workflow
+
+The **sorrifier** (`skills/sorrifier/SKILL.md`) is a structural isolation tool, not a subagent. Instruct proof agents to use it when:
+
+- A proof is partially working but one step is broken and blocking compilation of the whole file
+- A lemma is too complex and you want to mechanically extract a sub-goal into a standalone lemma
+- You need to restore compilation quickly so other work can proceed
+
+The proof agent runs the sorrifier as part of **Category 5: Decomposition** (Approach D). It replaces the failing part with `sorry`, then uses `axle sorry2lemma --reconstruct-callsite` to auto-extract a standalone lemma. The result: the main theorem compiles cleanly, and the hard part is isolated in a new lemma that can be tackled independently (possibly in a later session or by a different proof agent).
 
 ---
 

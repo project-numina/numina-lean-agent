@@ -1,3 +1,5 @@
+**FIRST ACTION**: Read the skill overviews now — `skills/search/SKILL.md`, `skills/verification/SKILL.md`, `skills/llm/SKILL.md`, `skills/sorrifier/SKILL.md`. For any tool's exact CLI invocation, read the corresponding `reference-<tool>.md` in that directory.
+
 Please analyze all sorries in the file and choose ONLY ONE that you believe is most approachable or strategically important to work on.
 
 # YOUR TASK: WRITE LEAN FORMAL PROOFS
@@ -86,21 +88,35 @@ theorem main_result (n : ℕ) : n + n = 2 * n := by
 exact helper n
 ```
 
-## VERIFICATION (IMPORTANT):
-* You MUST use the tool `lean_diagnostic_messages` (with only file path argument and declaration_name argument, which means it will verify the entire file) to verify the file after each update
-* As sometimes you may input the wrong line, which will not give you the correct information.
-* Errors mean "severity 1" in the response of `lean_diagnostic_messages`
-* NEVER use `lake build` or `lean_build` - always use lean_diagnostic_messages instead
+## VERIFICATION (CRITICAL — VERIFY FREQUENTLY):
+* Use **axle-check** very frequently — after every logical block of changes
+* axle-check is fast; do not hesitate to call it. When in doubt, just call it.
+* Returns `okay: true/false` and `lean_messages`; severity 1 = error
+* NEVER use `lake build`
 
 
 # WORKFLOW:
 
 1. Analyze all sorries and SELECT EXACTLY ONE target based on approachability and strategic importance
-2. Verify with `lean_diagnostic_messages` after each change (NEVER use `lake build`)
+2. After each change: run **axle-check** (fast — use it liberally)
 3. (IMPORTANT) Check the length of code and comments in a single formal lemma/theorem, if over 500 lines. Please create lemmas to prove it.
 4. Create helper lemmas if needed (mark them with "/- (by claude) Helper for ... -/")
 5. Stay focused on target until complete
 6. End with appropriate END_REASON
+
+# YOUR TOOLS
+
+These are your tools for this session (exact invocations in `skills/SKILL.md`):
+
+| Tool | Purpose | When to use |
+|------|---------|-------------|
+| **axle-check** | Compile & verify file | After every change — fast, use freely |
+| **leandex** | Semantic lemma search | Whenever stuck or looking for a Mathlib lemma |
+| **loogle** | Pattern-based lemma search | When you know the type shape |
+| **informal-prover** | Get informal proof from Gemini | Before formalizing, or when stuck |
+| **discussion-partner** | Discuss strategy with Gemini | Any question about approach or math |
+| **axle-repair** | Auto-fix broken proofs | When close but small errors remain |
+| **sorrifier** | Isolate failing steps into standalone lemmas | When a proof is too complex/broken — extract sorry into a separate lemma |
 
 # OTHER TIPS:
 
@@ -125,27 +141,16 @@ exact helper n
 A sorry is "completed" only when replaced with Lean code that compiles without errors.
 Partial progress must be in Lean code, not comments.
 
-## TOOLS:
-* `lean_leandex` is a powerful semantic search engine - describe what you're looking for in natural language or use Lean terms. Example queries: "theorem about sum of list elements", "Finset induction", "n + 1 <= m if n < m", "LinearMap.IsPositive.add"
-* Actively use `lean_leandex` to search for relevant theorems and lemmas in mathlib
-* Every time when you are stuck or try to solve a somehow claddical goal, you should use `lean_leandex` to search for relevant theorems and lemmas in mathlib.
-* Use `lean_goal` frequently to check proof state and understand what needs to be proven
-* Don't hesitate to explore and search - discovering available theorems is part of the deep thinking process
-* You can use `gemini_informal_prover` to solve and analyze mathematical problems.
-* `discussion_partner` is a great partner to discuss any topic with him, not limited to math.
-* `create_formal_sketch` can be used to create a formal sketch according to the informal solution which give by `gemini_informal_prover`.
-
 ## GEMINI HELPING (STRATEGIC DECOMPOSITION):
-* Call 'gemini_informal_prover' frequently to get fine-grained informal proofs that help guide your formal proving.
-* **CRITICAL - COMPLEX PROOF HANDLING:** If the solution from `gemini_informal_prover` is complex, long, or involves multiple distinct steps, **DO NOT** attempt to formalize it directly in one block.
+* Call **informal-prover** frequently to get fine-grained informal proofs that help guide your formal proving.
+* **CRITICAL - COMPLEX PROOF HANDLING:** If the solution is complex, long, or involves multiple distinct steps, **DO NOT** attempt to formalize it directly in one block.
 * **MANDATORY:** You MUST break the informal solution down into a series of separate `lemma`s (helper lemmas).
 * Define these lemmas first (using `sorry` if needed initially), and then compose them to prove the main target.
 * This prevents unmanageable proof states and makes the code modular.
-* Consider whether to use `create_formal_sketch` to create a formal sketch if the solution from `gemini_informal_prover` is complex.
 
 ## CODE STRUCTURE & REFACTORING (CRITICAL):
 * **Avoid "Wall of Text/Code":** If a formal statement currently has a very long comment block explaining the logic, or if the code itself is becoming excessively long/unreadable:
-1. **Split it:** Extract parts of the logic into separate helper lemmas.
+1. **Split it:** Extract parts of the logic into separate helper lemmas. If a proof is broken or too complex, use the **sorrifier** workflow (`skills/sorrifier/SKILL.md`) to isolate failing steps — it replaces the broken part with `sorry`, then uses `axle sorry2lemma --reconstruct-callsite` to extract it into a standalone lemma automatically.
 2. **Clean up:** Once extracted, **REMOVE** the long explanatory comments from the code. The structure of the lemmas should be self-explanatory.
 3. Do not leave massive comment blocks in the final code; use the modularity of lemmas to serve as documentation.
 
@@ -175,12 +180,12 @@ Partial progress must be in Lean code, not comments.
 * DO NOT create a new Lean file to experiment with code snippets; just try them directly in the target file
 
 ## WHEN TO END THE SESSION:
-* When you have completed your selected target, you should end the session with END_REASON:SELECTED_TARGET_COMPLETE (DO NOT go to other lemmas).
-* When you take too long to complete the selected target or make some progress, you should end the session with END_REASON:LIMIT.
-* Every time before you end the session with END_REASON:COMPLETE or END_REASON:SELECTED_TARGET_COMPLETE, you should implement the verification process one more time to check the whole file.
-* If there are no errors, the you can end.
-* If there are errors, you should take some efforts to make it compile
-* you can make minimal modifications to replace the failed codes' proof with sorry to make it compile.
+
+**Termination is triggered by the state of your selected target only.**
+
+* **SELECTED_TARGET_COMPLETE**: Your selected target compiles with no sorry and no errors → run **axle-check** on the file one final time to confirm, then **stop immediately**. Errors or sorries in OTHER lemmas do NOT prevent you from ending — ignore them.
+* **COMPLETE**: axle-check on the entire folder returns okay with zero sorries and zero errors across all files → end with COMPLETE.
+* **LIMIT**: You are stuck, out of tokens, or have made no meaningful progress on the selected target → end with LIMIT.
 
 # END FORMAT:
 
@@ -196,8 +201,8 @@ DO NOT add any other text or markdown formatting for this line.
 1. ANALYZE all sorries and SELECT EXACTLY ONE TARGET based on approachability/strategic importance
 2. FOCUS: don't switch goals
 3. NEW LEMMAS: mark with "/- (by claude) Helper for ... -/"
-4. COMPLEX PROOFS: Break Gemini's informal solution into multiple lemmas; do not write one giant proof.
+4. COMPLEX PROOFS: Break informal solution into multiple lemmas; do not write one giant proof.
 5. REFACTOR: If comments/code are too long, split into lemmas and remove the comments.
-6. VERIFY frequently with lean_diagnostic_messages
+6. VERIFY frequently with **axle-check** — it's fast, use it liberally
 7. MARK your comments: `/- (by claude) ... -/` (ALWAYS include "(by claude)" marker)
 8. END with: SELECTED_TARGET_COMPLETE / COMPLETE / LIMIT in the format of END_REASON:{reason}  (DO NOT add any other text or markdown formatting for this line)

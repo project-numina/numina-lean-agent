@@ -2,11 +2,22 @@
 """Search Lean theorems/definitions using Leandex semantic search."""
 import argparse
 import json
-import requests
+import logging
 import sys
+from pathlib import Path
+
+import requests
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 
 def search(query: str, num_results: int = 5) -> None:
+    logger.info("leandex.search called: num_results=%d query=%r", num_results, query)
     url = "https://leandex.projectnumina.ai/api/v1/search"
     params = {
         "q": query,
@@ -30,6 +41,7 @@ def search(query: str, num_results: int = 5) -> None:
                     data = line.removeprefix("data:").strip()
 
         if data is None:
+            logger.error("No data received from Leandex")
             print("Error: No data received from Leandex", file=sys.stderr)
             sys.exit(1)
 
@@ -38,8 +50,10 @@ def search(query: str, num_results: int = 5) -> None:
         for r in results:
             r["primary_declaration"] = r["primary_declaration"]["lean_name"]
 
+        logger.info("leandex.search succeeded: %d results", len(results))
         print(json.dumps(results, indent=2, ensure_ascii=False))
     except Exception as e:
+        logger.exception("leandex.search failed: %s", e)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

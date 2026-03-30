@@ -2,10 +2,19 @@
 """Solve math problems with LLM (Gemini/GPT) and verify the solution."""
 import argparse
 import json
+import logging
 import os
 import re
 import sys
 import time
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 SOLUTION_PROMPT = """You are a Formal Logic Expert and Mathematical Proof Engine. Your goal is to derive proofs that are rigorously structured, formalization-ready, and devoid of ambiguity.
 
@@ -118,6 +127,7 @@ def _call_gemini(prompt: str, model: str, temperature: float) -> str | None:
 
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
+        logger.error("GEMINI_API_KEY not set")
         print("Error: Please set GEMINI_API_KEY", file=sys.stderr)
         sys.exit(1)
     try:
@@ -129,6 +139,7 @@ def _call_gemini(prompt: str, model: str, temperature: float) -> str | None:
         )
         return response.text if response.text else None
     except Exception as e:
+        logger.exception("_call_gemini failed: %s", e)
         print(f"LLM error: {e}", file=sys.stderr)
         return None
 
@@ -138,6 +149,7 @@ def _call_gpt(prompt: str, model: str, temperature: float) -> str | None:
 
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
+        logger.error("OPENAI_API_KEY not set")
         print("Error: Please set OPENAI_API_KEY", file=sys.stderr)
         sys.exit(1)
     try:
@@ -152,6 +164,7 @@ def _call_gpt(prompt: str, model: str, temperature: float) -> str | None:
             return response.output[-1].content[0].text
         return None
     except Exception as e:
+        logger.exception("_call_gpt failed: %s", e)
         print(f"LLM error: {e}", file=sys.stderr)
         return None
 
@@ -164,8 +177,9 @@ def prove(
     max_attempts: int = 10,
     log_dir: str | None = None,
 ) -> None:
+    logger.info("prove called: backend=%s model=%s max_attempts=%d problem_len=%d", backend, model, max_attempts, len(math_problem))
     if backend == "gemini":
-        model = model or "gemini-3-pro-preview"
+        model = model or "gemini-3.1-pro-preview"
         call_llm = lambda p: _call_gemini(p, model, temperature)
     elif backend == "gpt":
         model = model or "gpt-5.2-pro"
@@ -209,12 +223,14 @@ def prove(
         score = match.group(1).strip() if match else None
 
         if score == "1":
+            logger.info("prove succeeded on attempt %d", attempt)
             result = {"solution": solution, "verification": "correct", "attempts": attempt}
             print(json.dumps(result, ensure_ascii=False))
             _log(log_dir, math_problem, solution, "correct")
             return
 
         if attempt == max_attempts:
+            logger.warning("prove exhausted attempts (%d), final score=%s", max_attempts, score)
             result = {"solution": solution, "verification": f"incorrect\n{verification}", "attempts": attempt}
             print(json.dumps(result, ensure_ascii=False))
             _log(log_dir, math_problem, solution, f"incorrect\n{verification}")

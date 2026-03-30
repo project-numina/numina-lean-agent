@@ -110,11 +110,11 @@ Extract:
 
 **If informal proof is insufficient**:
 
-**Use `gemini_informal_prover` to get detailed proof:**
+**Use **informal-prover** to get detailed proof:**
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  TOOL: gemini_informal_prover                                    │
+│  TOOL: python skills/cli/informal_prover.py PROBLEM              │
 │                                                                 │
 │  Query template:                                                │
 │  "Please provide a detailed, step-by-step proof for:            │
@@ -248,7 +248,7 @@ theorem main_theorem : ... := ...
 
 **CRITICAL: Code must compile with sorry.**
 
-1. Run `lean_diagnostic_messages` on the file
+1. Run **axle-check** on the file (`python skills/cli/axle.py check FILE --environment lean-4.28.0`)
 2. Check for severity-1 errors
 3. Fix any errors:
    - Type mismatches
@@ -502,7 +502,7 @@ lemma foo : P := sorry
 ### Pitfall 4: Not Verifying Compilation
 
 ❌ **Bad**: Inserting code without checking compilation
-✅ **Good**: Always run `lean_diagnostic_messages` and fix errors
+✅ **Good**: Always run **axle-check** and fix errors
 
 ### Pitfall 5: Forgetting Blueprint Update
 

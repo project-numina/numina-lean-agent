@@ -2,13 +2,23 @@
 """Search theorems by proof state using premise-search.com."""
 import argparse
 import json
+import logging
 import os
 import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 
 def search(goal: str, num_results: int = 5) -> None:
+    logger.info("state_search.search called: num_results=%d goal_len=%d", num_results, len(goal))
     try:
         encoded = urllib.parse.quote(goal)
         base_url = os.getenv("LEAN_STATE_SEARCH_URL", "https://premise-search.com")
@@ -24,8 +34,10 @@ def search(goal: str, num_results: int = 5) -> None:
         for result in results:
             result.pop("rev", None)
 
+        logger.info("state_search.search succeeded: %d results", len(results))
         print(json.dumps(results, indent=2, ensure_ascii=False))
     except Exception as e:
+        logger.exception("state_search.search failed: %s", e)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

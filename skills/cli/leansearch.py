@@ -2,12 +2,22 @@
 """Search Lean theorems using LeanSearch (natural language + Lean terms)."""
 import argparse
 import json
+import logging
 import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    handlers=[logging.FileHandler(Path(__file__).parents[2] / "cli.log")],
+)
+logger = logging.getLogger(__name__)
 
 
 def search(query: str, num_results: int = 5) -> None:
+    logger.info("leansearch.search called: num_results=%d query=%r", num_results, query)
     try:
         encoded = urllib.parse.quote(query)
         req = urllib.request.Request(
@@ -20,11 +30,14 @@ def search(query: str, num_results: int = 5) -> None:
             results = json.loads(response.read())
 
         if not results:
+            logger.info("leansearch.search: no results found")
             print("No results found.")
             return
 
+        logger.info("leansearch.search succeeded: %d results", len(results))
         print(json.dumps(results, indent=2, ensure_ascii=False))
     except Exception as e:
+        logger.exception("leansearch.search failed: %s", e)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
