@@ -1,0 +1,22 @@
+# ProblemName                        LeanFolder                                                     Blueprint
+# Paths relative to this file's directory (/mnt/nvme1/jacky/workspace/_eval_lb).
+PicardGroupUfd                       LiveProveBench/LiveProveBench/PicardGroupUfd                   LiveProveBench/blueprint/src/theorems/picard-group-ufd.tex
+CondorcetJury                        LiveProveBench/LiveProveBench/CondorcetJury                    LiveProveBench/blueprint/src/theorems/condorcet-jury.tex
+Worpitzky                            LiveProveBench/LiveProveBench/Worpitzky                        LiveProveBench/blueprint/src/theorems/worpitzky.tex
+Dilworth                             LiveProveBench/LiveProveBench/Dilworth                         LiveProveBench/blueprint/src/theorems/dilworth.tex
+PolygonalNumberTheorem               LiveProveBench/LiveProveBench/PolygonalNumberTheorem           LiveProveBench/blueprint/src/theorems/polygonal-number-theorem.tex
+SinkhornTheorem                      LiveProveBench/LiveProveBench/SinkhornTheorem                  LiveProveBench/blueprint/src/theorems/sinkhorn-theorem.tex
+SchurRamsey                          LiveProveBench/LiveProveBench/SchurRamsey                      LiveProveBench/blueprint/src/theorems/schur-ramsey.tex
+RiemannSeries                        LiveProveBench/LiveProveBench/RiemannSeries                    LiveProveBench/blueprint/src/theorems/riemann-series.tex
+VonStaudtClausen                     LiveProveBench/LiveProveBench/VonStaudtClausen                 LiveProveBench/blueprint/src/theorems/von-staudt-clausen.tex
+AndersonTheorem                      LiveProveBench/LiveProveBench/AndersonTheorem                  LiveProveBench/blueprint/src/theorems/anderson-theorem.tex
+BanachMazur                          LiveProveBench/LiveProveBench/BanachMazur                      LiveProveBench/blueprint/src/theorems/banach-mazur.tex
+BrascampLieb                         LiveProveBench/LiveProveBench/BrascampLieb                     LiveProveBench/blueprint/src/theorems/brascamp-lieb.tex
+MertensFirstTheorem                  LiveProveBench/LiveProveBench/MertensFirstTheorem              LiveProveBench/blueprint/src/theorems/mertens-first-theorem.tex
+PicardTheorem                        LiveProveBench/LiveProveBench/PicardTheorem                    LiveProveBench/blueprint/src/theorems/picard-theorem.tex
+BorsukUlamTheorem                    LiveProveBench/LiveProveBench/BorsukUlamTheorem                LiveProveBench/blueprint/src/theorems/borsuk-ulam-theorem.tex
+FareySequence                        LiveProveBench/LiveProveBench/FareySequence                    LiveProveBench/blueprint/src/theorems/farey-sequence.tex
+ErdosGallaiTheorem                   LiveProveBench/LiveProveBench/ErdosGallaiTheorem               LiveProveBench/blueprint/src/theorems/erdos-gallai-theorem.tex
+DillerDressTheorem                   LiveProveBench/LiveProveBench/DillerDressTheorem               LiveProveBench/blueprint/src/theorems/diller-dress-theorem.tex
+DefinabilityNaturalsInRationals      LiveProveBench/LiveProveBench/DefinabilityNaturalsInRationals  LiveProveBench/blueprint/src/theorems/definability-naturals-in-rationals.tex
+KaplanskyTheoremOnQuadraticForms     LiveProveBench/LiveProveBench/KaplanskyTheoremOnQuadraticForms LiveProveBench/blueprint/src/theorems/kaplansky-theorem-on-quadratic-forms.tex

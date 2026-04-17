@@ -1,0 +1,46 @@
+# Shared settings for LiveProveBench runs.
+# Per-problem rows (name + paths) live in ../../lists.txt.
+#
+# Run the first 3 problems, 10-minute pause between each:
+#   python scripts/run_liveprovebench.py --count 3 --sleep-between 10
+#
+# Resume (e.g. continue from #4):
+#   python scripts/run_liveprovebench.py --from 4 --count 3 --sleep-between 10
+#
+# Dry-run (preview without executing):
+#   python scripts/run_liveprovebench.py --dry-run --count 3 --sleep-between 10
+
+lean_repo: /mnt/nvme1/jacky/workspace/_eval_lb/LiveProveBench
+lists_file: /mnt/nvme1/jacky/workspace/_eval_lb/numina-lean-agent/config/lists.txt
+# Paths inside lists.txt are resolved against this base.
+lists_base: /mnt/nvme1/jacky/workspace/_eval_lb
+
+prompt_template: prompts/prompt_hard_mode_liveprovebench.txt
+base_branch: main
+
+runner:
+  cwd: /mnt/nvme1/jacky/workspace/_eval_lb/numina-lean-agent
+  task_type: folder
+  max_rounds: 5
+  permission_mode: bypassPermissions
+  # Paths are relative to runner.cwd (numina-lean-agent/).
+  # Everything lives under experiments/, which is already in .gitignore.
+  result_dir: experiments/liveprovebench/results
+  mcp_log_dir: experiments/liveprovebench/mcp_logs
+  tmp_prompt_dir: experiments/liveprovebench/tmp_prompts
+  # Pause between problems to avoid hitting rate / quota limits.
+  # CLI flag --sleep-between overrides this. Set to 0 to disable.
+  sleep_between_tasks_minutes: 0
+
+# After `git checkout`, rebuild the Lean project so the freshly-checked-out
+# branch is in a compilable state before the agent runs. Set enabled: false
+# to skip (e.g. if you've already built manually).
+lake_build:
+  enabled: true
+  cmd: ["lake", "build", "LiveProveBench"]
+  timeout_seconds: 1800
+
+git:
+  skip_if_branch_exists: true
+  commit_after: true
+  commit_message_template: "run {nn}_{name}"
