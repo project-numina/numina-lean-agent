@@ -37,6 +37,6 @@ python skills/cli/axle.py repair-proofs proof.lean --environment lean-4.28.0 --n
 
 ## Notes
 
-- Run `axle check` first to identify which theorems are broken before calling repair-proofs.
+- Run `python skills/cli/lean_check.py FILE` first to identify which theorems are broken before calling repair-proofs.
 - `apply_terminal_tactics` is most useful when a proof is almost complete but ends in `sorry`.
 - `AXLE_API_KEY` environment variable is required.

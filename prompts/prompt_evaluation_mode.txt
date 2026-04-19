@@ -1,16 +1,16 @@
 **FIRST ACTION**: Read the skill overviews now — `skills/search/SKILL.md`, `skills/verification/SKILL.md`, `skills/llm/SKILL.md`, `skills/sorrifier/SKILL.md`. For any tool's exact CLI invocation, read the corresponding `reference-<tool>.md` in that directory.
 
-Please analyze all sorries in the file and choose ONLY ONE that you believe is most approachable or strategically important to work on.
+Please analyze ALL sorries in the file and work through them systematically, prioritizing by approachability and strategic importance.
 
 # YOUR TASK: WRITE LEAN FORMAL PROOFS
 
 Your task is to write Lean 4 formal proofs that compile successfully.
 Replace `sorry` with executable Lean code (tactics, term-mode proofs, etc.) that passes the Lean compiler.
-You should choose ONLY ONE target lemma/sorry for this entire session, focus on it and try your best to complete it (in lean4 formal way).
+You should work through ALL sorries in the file, starting from the most approachable or strategically important ones (e.g., helper lemmas that unblock other proofs).
 
 ---
 
-# ⛔️ CRITICAL PROHIBITION: NO NATURAL LANGUAGE PROOFS ⛔️
+# CRITICAL PROHIBITION: NO NATURAL LANGUAGE PROOFS
 
 **THIS IS THE MOST IMPORTANT RULE OF THIS SESSION.**
 
@@ -42,25 +42,25 @@ These tasks require DEEP THINKING and sustained effort. Work systematically and 
 * Frequently check the length of code and comments in a single formal lemma/theorem, if over 500 lines. Please create lemmas to prove it.
 
 
-# SESSION FOCUS RULES (CRITICAL):
+# SESSION WORKFLOW RULES (CRITICAL):
 
 At session start, you MUST:
 1. Identify all remaining sorries or failed proofs in the files (There may be some lemmas with failed proofs, you should use tools to check the files)
-2. SELECT EXACTLY ONE target lemma/sorry that you believe is:
-* Most approachable given your capabilities
-* Strategically important (e.g., helper lemma that unblocks other proofs)
-3. Announce: "TARGET FOR THIS SESSION: [lemma_name] at line [line_number]"
+2. Rank them by approachability and strategic importance (helper lemmas that unblock others should be prioritized)
+3. Announce your work plan: "WORK PLAN: [lemma_1] (line X), [lemma_2] (line Y), ... ordered by priority"
 
 During session:
-* ONLY work on your selected target and any NEW helper lemmas you create for it
-* DO NOT switch to other existing sorries, even if they seem easier
-* New helper lemmas with sorry become part of your current work scope
-* Goal: MEANINGFUL PROGRESS on selected target, not superficial touches on many goals
+* Work through sorries systematically according to your plan
+* After completing (or making best-effort progress on) one sorry, move on to the next
+* For each sorry, make MEANINGFUL PROGRESS — do not just attempt a trivial fix and skip; invest real effort
+* If a sorry is too difficult after sustained effort, leave a Lean proof skeleton with structured `sorry` placeholders and move on
+* New helper lemmas with sorry become part of your current work scope — prove them before moving on if possible
+* Track your progress: after each sorry, briefly note the status (proven / partial / skipped)
 
 End session with ONE of:
-* SELECTED_TARGET_COMPLETE — selected target fully proven and compiles, but other sorries exist
 * COMPLETE — ALL sorries in ENTIRE FOLDER are proven and compile
-* LIMIT — stopped due to: token limits, stuck, compilation errors, or target still has sorry
+* SELECTED_TARGET_COMPLETE — you have proven some sorries and made best-effort progress on the rest; remaining sorries may need a separate session with fresh context
+* LIMIT — stopped due to: token limits, stuck on all remaining targets, or compilation errors
 
 # COMMENTS GUIDELINES (CRITICAL):
 
@@ -81,11 +81,11 @@ Keep your comments concise, focused, and insightful. Don't restate obvious code.
 ## Example:
 ```lean4
 /- (by claude) Helper for main_result -/
-lemma helper (n : ℕ) : n + n = 2 * n := by
-sorry
+lemma helper (n : Nat) : n + n = 2 * n := by
+  sorry
 
-theorem main_result (n : ℕ) : n + n = 2 * n := by
-exact helper n
+theorem main_result (n : Nat) : n + n = 2 * n := by
+  exact helper n
 ```
 
 ## VERIFICATION (CRITICAL — VERIFY FREQUENTLY):
@@ -97,12 +97,13 @@ exact helper n
 
 # WORKFLOW:
 
-1. Analyze all sorries and SELECT EXACTLY ONE target based on approachability and strategic importance
-2. After each change: run **lean-check** (`python skills/cli/lean_check.py FILE`) — fast, use it liberally
-3. (IMPORTANT) Check the length of code and comments in a single formal lemma/theorem, if over 500 lines. Please create lemmas to prove it.
-4. Create helper lemmas if needed (mark them with "/- (by claude) Helper for ... -/")
-5. Stay focused on target until complete
-6. End with appropriate END_REASON
+1. ANALYZE all sorries and RANK them by approachability and strategic importance
+2. Announce your WORK PLAN with ordered targets
+3. Work through each sorry: prove it, or make meaningful progress, then move on
+4. After each change: run **lean-check** (`python skills/cli/lean_check.py FILE`) — fast, use it liberally
+5. (IMPORTANT) Check the length of code and comments in a single formal lemma/theorem, if over 500 lines. Please create lemmas to prove it.
+6. Create helper lemmas if needed (mark them with "/- (by claude) Helper for ... -/")
+7. End with appropriate END_REASON
 
 # YOUR TOOLS
 
@@ -166,8 +167,8 @@ Partial progress must be in Lean code, not comments.
 * usage of `grind`: similar to `omega` and `aesop`. But `grind` is more powerful.
 * Don't put too many items in one `linarith` or `nlinarith` call (at most 5)
 * Do NOT, under ANY circumstances, allow division and subtraction operations on natural number literals, or literals with UNDEFINED types, unless REQUIRED by the theorem statement. For example, do NOT allow literals like `1 / 3` or `2 / 5` or `1 - 3`. ALWAYS specify the types. AVOID natural number arithmetic UNLESS NEEDED by the theorem statement.
-* ALWAYS specify types when describing fractions. For example, ((2 : ℝ) / 3) or ((2 : ℚ) / 3) instead of (2 / 3). Do this everywhere EXCEPT the given theorem statement.
-* Do NOT, under ANY circumstances, allow division and subtraction operations on variables of type natural numbers (Nat or ℕ), unless REQUIRED by the theorem statement. For example, do NOT allow expressions like (a-b) or (a/b) where a, b are of type ℕ. ALWAYS cast the variables to a suitable type (ℤ, ℚ or ℝ) when performing arithmetic operations. AVOID natural number arithmetic UNLESS NEEDED by the theorem statement.
+* ALWAYS specify types when describing fractions. For example, ((2 : R) / 3) or ((2 : Q) / 3) instead of (2 / 3). Do this everywhere EXCEPT the given theorem statement.
+* Do NOT, under ANY circumstances, allow division and subtraction operations on variables of type natural numbers (Nat or N), unless REQUIRED by the theorem statement. For example, do NOT allow expressions like (a-b) or (a/b) where a, b are of type N. ALWAYS cast the variables to a suitable type (Z, Q or R) when performing arithmetic operations. AVOID natural number arithmetic UNLESS NEEDED by the theorem statement.
 
 ## CONSTRAINTS:
 * You are ENCOURAGED to add new helper lemmas and intermediate results to make proofs clearer and more modular
@@ -176,33 +177,33 @@ Partial progress must be in Lean code, not comments.
 * Lemmas with `sorry` placeholders are valid and can be used in other proofs
 * You MUST NOT create axioms
 * You can NOT use the tactic `native_decide`
-* STAY FOCUSED on your selected target for the entire session
 * DO NOT create a new Lean file to experiment with code snippets; just try them directly in the target file
 
 ## WHEN TO END THE SESSION:
 
-**Termination is triggered by the state of your selected target only.**
+**Termination is triggered by the overall state of the file(s).**
 
-* **SELECTED_TARGET_COMPLETE**: Your selected target compiles with no sorry and no errors → run **lean-check** on the file one final time to confirm, then **stop immediately**. Errors or sorries in OTHER lemmas do NOT prevent you from ending — ignore them.
-* **COMPLETE**: lean-check on the entire folder returns okay with zero sorries and zero errors across all files → end with COMPLETE.
-* **LIMIT**: You are stuck, out of tokens, or have made no meaningful progress on the selected target → end with LIMIT.
+* **COMPLETE**: lean-check on the entire folder returns okay with zero sorries and zero errors across all files -> end with COMPLETE.
+* **SELECTED_TARGET_COMPLETE**: You have completed some sorries successfully. For the remaining ones, you have either (a) made meaningful partial progress (Lean proof skeleton with structured sorry placeholders), or (b) determined they require deeper context or a fresh session to solve. Run lean-check one final time to confirm the file still compiles, then end.
+* **LIMIT**: You are stuck on all remaining targets, out of tokens, or the file has unrecoverable compilation errors -> end with LIMIT.
 
 # END FORMAT:
 
 At the end of your response (for each session), include one line at the very end:
 END_REASON:{reason}
 
-where {reason} is SELECTED_TARGET_COMPLETE, COMPLETE, or LIMIT (see "SESSION FOCUS RULES" above for definitions).
+where {reason} is COMPLETE, SELECTED_TARGET_COMPLETE, or LIMIT (see above for definitions).
 DO NOT add any other text or markdown formatting for this line.
 
 
 # QUICK REFERENCE:
 
-1. ANALYZE all sorries and SELECT EXACTLY ONE TARGET based on approachability/strategic importance
-2. FOCUS: don't switch goals
-3. NEW LEMMAS: mark with "/- (by claude) Helper for ... -/"
-4. COMPLEX PROOFS: Break informal solution into multiple lemmas; do not write one giant proof.
-5. REFACTOR: If comments/code are too long, split into lemmas and remove the comments.
-6. VERIFY frequently with **lean-check** (`python skills/cli/lean_check.py FILE`) — it's fast, use it liberally
-7. MARK your comments: `/- (by claude) ... -/` (ALWAYS include "(by claude)" marker)
-8. END with: SELECTED_TARGET_COMPLETE / COMPLETE / LIMIT in the format of END_REASON:{reason}  (DO NOT add any other text or markdown formatting for this line)
+1. ANALYZE all sorries and RANK by approachability/strategic importance
+2. Announce WORK PLAN with ordered targets
+3. Work through sorries systematically — meaningful progress on each before moving on
+4. NEW LEMMAS: mark with "/- (by claude) Helper for ... -/"
+5. COMPLEX PROOFS: Break informal solution into multiple lemmas; do not write one giant proof.
+6. REFACTOR: If comments/code are too long, split into lemmas and remove the comments.
+7. VERIFY frequently with **lean-check** (`python skills/cli/lean_check.py FILE`) — it's fast, use it liberally
+8. MARK your comments: `/- (by claude) ... -/` (ALWAYS include "(by claude)" marker)
+9. END with: COMPLETE / SELECTED_TARGET_COMPLETE / LIMIT in the format of END_REASON:{reason}  (DO NOT add any other text or markdown formatting for this line)

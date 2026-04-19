@@ -35,6 +35,6 @@ python skills/cli/axle.py simplify-theorems proof.lean --environment lean-4.28.0
 
 ## Notes
 
-- Only run on proofs that already compile successfully (use `axle check` first).
+- Only run on proofs that already compile successfully (use `python skills/cli/lean_check.py FILE` first).
 - Best used as a final cleanup step after a proof is verified.
 - `AXLE_API_KEY` environment variable is required.

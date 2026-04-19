@@ -10,11 +10,11 @@ description: "Lean 4 theorem proving toolkit: search lemmas, verify proofs, repa
 | Skill | Description |
 |-------|-------------|
 | [search](search/SKILL.md) | Search tools: leandex, loogle, leanfinder, leansearch, state-search, hammer-premise |
-| [verification](verification/SKILL.md) | Verification: axle check, verify-proof, disprove |
+| [verification](verification/SKILL.md) | Verification: lean-check, verify-proof, disprove |
 | [code-transform](code-transform/SKILL.md) | Code transforms: repair-proofs, simplify-theorems, sorry2lemma, extract-theorems |
 | [llm](llm/SKILL.md) | LLM tools: informal_prover, discussion_partner, code_golf |
 
 ## Environment variables
 - `GEMINI_API_KEY` — informal_prover (gemini), code_golf, discussion_partner (gemini)
 - `OPENAI_API_KEY` — informal_prover (gpt), discussion_partner (gpt)
-- `AXLE_API_KEY` — all axle commands
+- `AXLE_API_KEY` — axle commands (verify-proof, disprove, sorry2lemma, etc.)

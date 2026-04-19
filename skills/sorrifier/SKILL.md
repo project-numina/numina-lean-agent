@@ -13,17 +13,17 @@ This workflow uses two tools from other skills. All commands go through the logg
 
 | Tool | Skill | Purpose |
 |------|-------|---------|
-| `python skills/cli/axle.py check` | [verification](../verification/SKILL.md) | Diagnose compilation errors and pinpoint failing lines |
+| `python skills/cli/lean_check.py FILE` | [verification](../verification/SKILL.md) | Diagnose compilation errors and pinpoint failing lines |
 | `python skills/cli/axle.py sorry2lemma` | [code-transform](../code-transform/SKILL.md) | Extract sorry into standalone lemma with `--reconstruct-callsite` |
 
-For full parameter reference, see `verification/reference-axle-check.md` and `code-transform/reference-axle-sorry2lemma.md`.
+For full parameter reference, see `verification/reference-lean-check.md` and `code-transform/reference-axle-sorry2lemma.md`.
 
 ## Execution Workflow
 
 Follow these steps sequentially:
 
 ### Step 1: Diagnose
-Run `python skills/cli/axle.py check` to identify failing lines.
+Run `python skills/cli/lean_check.py FILE` to identify failing lines.
 - Read `lean_messages` for entries with `severity: "error"`.
 
 ### Step 2: Inject `sorry`
@@ -31,7 +31,7 @@ Edit the Lean code: replace the failing tactic/expression with `sorry`.
 - Scope the `sorry` to the smallest failing block, not the entire theorem.
 
 ### Step 3: Verify sorrified state
-Run `python skills/cli/axle.py check` again.
+Run `python skills/cli/lean_check.py FILE` again.
 - Acceptance: zero errors. Warnings about `declaration uses 'sorry'` are expected.
 - If errors persist, adjust sorry placement and repeat.
 
@@ -42,7 +42,7 @@ Run `python skills/cli/axle.py sorry2lemma` with:
 - Omit `--no-include-whole-context` if local context variables need capturing
 
 ### Step 5: Final verification
-Run `python skills/cli/axle.py check` one last time.
+Run `python skills/cli/lean_check.py FILE` one last time.
 - Acceptance: main theorem compiles by calling the new lemma. Unresolved logic is isolated in the extracted lemma.
 
 ## Example

@@ -248,8 +248,8 @@ theorem main_theorem : ... := ...
 
 **CRITICAL: Code must compile with sorry.**
 
-1. Run **axle-check** on the file (`python skills/cli/axle.py check FILE --environment lean-4.28.0`)
-2. Check for severity-1 errors
+1. Run **lean-check** on the file (`python skills/cli/lean_check.py FILE`)
+2. Check for errors (severity "error")
 3. Fix any errors:
    - Type mismatches
    - Unknown identifiers
@@ -445,7 +445,7 @@ tmp file:
 
 The proof agent will fill this in when it starts work:
 ```lean
-tmp file: PutnamLean/tmp_base_case.lean
+tmp file: PutnamLean/tmp/tmp_base_case.lean
 ```
 
 ---
@@ -502,7 +502,7 @@ lemma foo : P := sorry
 ### Pitfall 4: Not Verifying Compilation
 
 ❌ **Bad**: Inserting code without checking compilation
-✅ **Good**: Always run **axle-check** and fix errors
+✅ **Good**: Always run **lean-check** and fix errors
 
 ### Pitfall 5: Forgetting Blueprint Update
 

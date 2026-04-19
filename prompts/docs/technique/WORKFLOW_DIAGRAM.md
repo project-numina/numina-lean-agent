@@ -143,7 +143,7 @@ Pattern C: Complex (needs decomposition)
 │  │  State: todo                                               │   │
 │  │  Priority: 1                                               │   │
 │  │  Attempts: 0 / 20                                          │   │
-│  │  tmp file: path/tmp_lemma.lean  ← ADD THIS FIRST!          │   │
+│  │  tmp file: path/tmp/tmp_lemma.lean  ← ADD THIS FIRST!       │   │
 │  │  -/                                                        │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                            │                                     │
@@ -151,7 +151,7 @@ Pattern C: Complex (needs decomposition)
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │  STEP 1: Create tmp file                                  │   │
 │  │                                                            │   │
-│  │  -- File: path/tmp_lemma.lean                              │   │
+│  │  -- File: path/tmp/tmp_lemma.lean                           │   │
 │  │  import OriginalFile                                       │   │
 │  │  lemma name : statement := by                              │   │
 │  │    sorry                                                   │   │
@@ -406,7 +406,7 @@ lemma name : statement := by
 │  ORDER MATTERS:                                                  │
 │                                                                  │
 │  1. FIRST: Edit original file to add tmp file path in comment   │
-│  2. THEN:  Create the tmp file                                  │
+│  2. THEN:  Create the tmp file in tmp/ subfolder                │
 │  3. Work in tmp file (all attempts)                             │
 │  4. On success: Copy proof back to original                     │
 │  5. Delete tmp file                                             │

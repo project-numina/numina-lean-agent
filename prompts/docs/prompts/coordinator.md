@@ -166,7 +166,7 @@ Current status: ❌ todo / 🔄 partial (X/Y attempts)
 Budget: Y attempts
 
 Follow the proof agent protocol:
-1. Work in tmp file
+1. Work in tmp file (create in tmp/ subfolder alongside original)
 2. Try hint/grind first
 3. Search with leandex (`python skills/cli/leandex.py`) before proving
 4. Try all 5 categories

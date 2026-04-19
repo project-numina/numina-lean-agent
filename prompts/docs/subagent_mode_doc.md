@@ -147,7 +147,7 @@ From `BLUEPRINT_TEMPLATE.md`:
 
 From `docs/prompts/proof_agent.md`:
 1. Note tmp file in original status comment
-2. Create `tmp_<lemma>.lean` in same directory
+2. Create `tmp/tmp_<lemma>.lean` in a `tmp/` subfolder alongside the original file
 3. Work in tmp file (all attempts)
 4. Copy back when proven
 5. Delete tmp file
@@ -323,7 +323,7 @@ Read docs/prompts/common.md for shared rules.
 
 - Proof agent should delete after success
 - Check status comment for tmp file path
-- Manual cleanup: `rm <project>/tmp_*.lean`
+- Manual cleanup: `rm -r <project>/tmp/`
 
 ### Dependencies Unclear?
 
@@ -341,7 +341,7 @@ Read docs/prompts/common.md for shared rules.
 Blueprint: [lem:foo] (status: todo, formalized, clear statement)
 → Coordinator spawns Proof Agent
 → Proof Agent:
-  1. Creates tmp_foo.lean
+  1. Creates tmp/tmp_foo.lean
   2. Tries hint/grind
   3. Searches leandex
   4. Proves in 14/20 attempts

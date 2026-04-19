@@ -90,7 +90,7 @@ lemma name : statement := by
 State: 🔄 partial
 Priority: 1
 Attempts: 12 / 20
-tmp file: PutnamLean/tmp_base_case.lean
+tmp file: tmp/tmp_base_case.lean
 -/
 lemma base_case (n : ℕ) : f 0 = 1 := by
   have h : 0! = 1 := Nat.factorial_zero
@@ -106,13 +106,13 @@ lemma base_case (n : ℕ) : f 0 = 1 := by
 ### Protocol
 1. **Note tmp file** in original file's status comment
    ```lean
-   tmp file: tmp_<lemma_name>.lean
+   tmp file: tmp/tmp_<lemma_name>.lean
    ```
 
-2. **Create tmp file** in same directory as original
+2. **Create tmp file** in a `tmp/` subfolder alongside the original file
    ```bash
-   # If original is PutnamLean/Example.lean
-   # Create PutnamLean/tmp_base_case.lean
+   # If original is Experiment/main_theorem.lean
+   # Create Experiment/tmp/tmp_base_case.lean
    ```
 
 3. **Work in tmp file**
@@ -131,8 +131,8 @@ lemma base_case (n : ℕ) : f 0 = 1 := by
 
 ### Example Tmp File
 ```lean
--- File: PutnamLean/tmp_base_case.lean
-import PutnamLean.Example
+-- File: Experiment/tmp/tmp_base_case.lean
+import Experiment.MainTheorem
 
 lemma base_case (n : ℕ) : f 0 = 1 := by
   -- Working proof here

@@ -25,7 +25,7 @@ This file adds proof-agent-specific rules on top of those common foundations.
 **Your code MUST compile without errors when you exit.**
 
 ### Rules
-1. **All code must compile**: **axle-check** (`python skills/cli/axle.py check`) returns no severity-1 errors
+1. **All code must compile**: **lean-check** (`python skills/cli/lean_check.py FILE`) returns no errors (severity "error")
 2. **NEVER use `axiom`**: Using `axiom` is FORBIDDEN. Use `sorry` instead.
 3. **If cannot complete a proof**:
    - Identify the **smallest** stuck part
@@ -58,8 +58,8 @@ lemma foo : P := by
 ```
 
 ### Before Exiting
-1. Run **axle-check** on file (`python skills/cli/axle.py check FILE --environment lean-4.28.0`)
-2. If ANY error (severity 1): fix it or sorry the minimal stuck part
+1. Run **lean-check** on file (`python skills/cli/lean_check.py FILE`)
+2. If ANY error (severity "error"): fix it or sorry the minimal stuck part
 3. Verify file compiles cleanly
 
 ---
@@ -348,10 +348,14 @@ Starting Attempt: [N] (resume if > 0, else start at 1)
 │  PRIMARY WORKFLOW: WORK IN TMP FILES                            │
 │                                                                 │
 │  1. Note tmp file in original                                   │
-│  2. Create tmp_<lemma_name>.lean in same directory              │
+│  2. Create tmp/<lemma_name>.lean in a tmp/ subfolder            │
+│     alongside the original file                                 │
 │  3. Work in tmp file (all attempts)                             │
 │  4. Copy back when proven                                       │
 │  5. Delete tmp file                                             │
+│                                                                 │
+│  IMPORTANT: NEVER write tmp files to /tmp or the system temp    │
+│  directory. Always use a tmp/ subfolder next to the original.   │
 │                                                                 │
 │  WHY: Keeps iteration context separate, avoids cluttering       │
 │       original code with failed attempts                        │
@@ -369,7 +373,7 @@ Starting Attempt: [N] (resume if > 0, else start at 1)
 │  ORDER MATTERS:                                                  │
 │                                                                 │
 │  1. FIRST: Edit original file to add tmp file path in comment   │
-│  2. THEN:  Create the tmp file                                  │
+│  2. THEN:  Create the tmp file in tmp/ subfolder                │
 │                                                                 │
 │  WHY: If you create tmp file first and forget to update the     │
 │       original, other agents won't know work is in progress.    │
@@ -382,20 +386,21 @@ Update the status comment in the **original file**:
 State: ❌ todo
 Priority: 1
 Attempts: 0 / 20
-tmp file: PutnamLean/tmp_base_case.lean  ← ADD THIS FIRST!
+tmp file: Experiment/tmp/tmp_base_case.lean  ← ADD THIS FIRST!
 -/
 lemma base_case (n : ℕ) : f 0 = 1 := sorry
 ```
 
-**Verify**: Run **axle-check** on the original file to ensure it still compiles.
+**Verify**: Run **lean-check** on the original file to ensure it still compiles.
 
 #### Step 2: Create Tmp File (AFTER updating original)
 
 **Only create the tmp file AFTER Step 1 is complete.**
+Create a `tmp/` subfolder alongside the original file if it doesn't exist.
 
 ```lean
--- File: PutnamLean/tmp_base_case.lean
-import PutnamLean.Example  -- Import original file
+-- File: Experiment/tmp/tmp_base_case.lean
+import Experiment.MainTheorem  -- Import original file
 
 lemma base_case (n : ℕ) : f 0 = 1 := by
   sorry
@@ -416,6 +421,30 @@ Once proof works:
 #### Step 5: Delete Tmp File
 
 Clean up after success!
+
+---
+
+## Splitting Helper Lemmas into Separate Files
+
+When you create helper lemmas that are **mathematically independent** from the main theorem (i.e., they only depend on Mathlib, not on other definitions in the main file), consider placing them in a separate helper file.
+
+### When to Split
+- Helper lemmas are self-contained (only need `import Mathlib`)
+- The main file is getting long and hard to manage
+- The blueprint agent has identified sub-lemmas as independent modules
+
+### How to Split
+1. Create a helper file alongside the main file (e.g., `Experiment/main_theorem_helpers.lean`)
+2. The helper file should only `import Mathlib` (no cross-imports between helper files)
+3. Run `python skills/cli/lean_check.py main_theorem_helpers.lean` to verify it compiles
+4. Run `lake build <Project>.<ModuleName>` (e.g., `lake build Experiment.MainTheoremHelpers`) to produce `.olean` — **this is required before the main file can import it**
+5. Add `import Experiment.MainTheoremHelpers` to the main file
+6. Run `python skills/cli/lean_check.py main_theorem.lean` to verify the import works
+
+### Rules
+- **Helper files must only import Mathlib**, not each other — keeps the build dependency simple
+- **Always `lake build` the helper file** before importing it from the main file — `lean_check.py` alone does NOT produce `.olean` files
+- **Verify both files compile** after splitting — check the helper first, build it, then check the main file
 
 ---
 
@@ -490,7 +519,7 @@ Please provide:
 [paste lemma statement]
 
 Current proof state:
-[paste from axle-check lean_messages]
+[paste from lean-check lean_messages]
 
 I've tried 2 approaches so far:
 1. [approach 1]: [result/error]
@@ -654,7 +683,7 @@ Can you suggest a simpler or more direct way to structure this proof?"
 - `simp_rw [lemmas]` - rewrite then simplify
 - `norm_cast` - normalize casts between types
 
-**Try 3-5 tactic variations** by editing the file and running **axle-check** after each:
+**Try 3-5 tactic variations** by editing the file and running **lean-check** after each:
 ```lean
 -- Try each of these in turn:
 hint / grind / omega / simp; omega / norm_cast; ring
@@ -730,9 +759,9 @@ lemma parent_lemma_helper (args) : goal := sorry
 
 When a proof is broken or too complex and you want to isolate the failing part automatically:
 1. Replace the failing tactic with `sorry`
-2. Run **axle-check** to confirm the file compiles (warnings OK, zero errors)
+2. Run **lean-check** to confirm the file compiles (warnings OK, zero errors)
 3. Run `python skills/cli/axle.py sorry2lemma FILE --environment lean-4.28.0 --names THEOREM --reconstruct-callsite`
-4. Run **axle-check** to verify the extracted lemma + reconstructed call site compiles
+4. Run **lean-check** to verify the extracted lemma + reconstructed call site compiles
 
 This automatically captures local context variables, generates a standalone lemma above the theorem, and replaces the sorry with a call to the new lemma. See `skills/sorrifier/SKILL.md` for the full protocol.
 
@@ -767,17 +796,17 @@ Is N == 0, 2, 4, 8, 16, or 32?
 ### Step 4: Implement Approach (in tmp file!)
 
 **Before coding**:
-- Run **axle-check** to see current proof state and errors
+- Run **lean-check** to see current proof state and errors
 - If goal looks classic → search with leandex
 - Always try hint/grind first
 
 **During coding**:
 - Work in tmp file
-- Try tactic variations and run **axle-check** after each
+- Try tactic variations and run **lean-check** after each
 - Pick what makes most progress
 
 **After coding**:
-- Run **axle-check** to verify
+- Run **lean-check** to verify
 - If error, analyze carefully
 - If success, prepare to copy back!
 
@@ -833,7 +862,7 @@ After attempts 10, 20, 30, 40:
 
 1. **Copy proof from tmp file to original**
 2. **Delete tmp file**
-3. **Verify with axle-check**
+3. **Verify with lean-check** (`python skills/cli/lean_check.py FILE`)
 4. **Update BLUEPRINT**
 5. **Complete agent log**
 6. **Report to Coordinator**
@@ -872,7 +901,7 @@ All tools are CLI scripts in `skills/cli/`. For full parameters, read `skills/<c
 
 | Tool | CLI | When to use |
 |------|-----|-------------|
-| **axle-check** | `python skills/cli/axle.py check FILE --environment lean-4.28.0` | After every code change |
+| **lean-check** | `python skills/cli/lean_check.py FILE` | After every code change |
 | **axle-verify-proof** | `python skills/cli/axle.py verify-proof STMT PROOF --environment lean-4.28.0` | To verify proof matches statement |
 | **axle-repair** | `python skills/cli/axle.py repair-proofs FILE --environment lean-4.28.0` | When close but small errors remain |
 

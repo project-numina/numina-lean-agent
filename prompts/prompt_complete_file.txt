@@ -1,9 +1,9 @@
 Complete the target Lean theorem file, making it sorry-free and ensuring it compiles without errors.
 
-Use the tool `lean_diagnostic_messages` to verify the file. Errors mean "severity 1" in the response.
+Use `python skills/cli/diagnostic.py FILE` to verify the file. Errors mean `"has_error": true` or severity `"error"` in the response.
 
 IMPORTANT:
-- Verify the file again after each update using `lean_diagnostic_messages`.
+- Verify the file again after each update using `python skills/cli/diagnostic.py`.
 - You may add helper lemmas, but do not create new axioms.
 
 Tips:
@@ -21,4 +21,4 @@ where {reason} is:
 - LIMIT — if stopped due to limits or there are still sorries/errors
 - COMPLETE — only if the file is sorry-free AND compiles without errors
 
-IMPORTANT: Use `lean_diagnostic_messages` to verify, do not use `lake build`.
+IMPORTANT: Use `python skills/cli/diagnostic.py` to verify, do not use `lake build`.
