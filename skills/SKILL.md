@@ -15,6 +15,7 @@ description: "Lean 4 theorem proving toolkit: search lemmas, verify proofs, repa
 | [llm](llm/SKILL.md) | LLM tools: informal_prover, discussion_partner, code_golf |
 
 ## Environment variables
-- `GEMINI_API_KEY` — informal_prover (gemini), code_golf, discussion_partner (gemini)
-- `OPENAI_API_KEY` — informal_prover (gpt), discussion_partner (gpt)
+- `GEMINI_API_KEY` — informal_prover (gemini generation, gemini verifier, gemini refinement), code_golf, discussion_partner (gemini)
+- `OPENAI_API_KEY` — informal_prover (gpt generation, gpt verifier), discussion_partner (gpt)
+- `ANTHROPIC_API_KEY` — informal_prover (claude verifier)
 - `AXLE_API_KEY` — axle commands (verify-proof, disprove, sorry2lemma, etc.)
