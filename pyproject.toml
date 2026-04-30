@@ -7,7 +7,9 @@ requires-python = ">=3.13"
 dependencies = [
     "anthropic>=0.75.0",
     "fire>=0.7.1",
+    "google-genai>=1.44.0",
     "lean-explore>=1.2.1",
+    "openai>=2.7.1",
     "pyyaml>=6.0.3",
     "requests>=2.32.3",
 ]

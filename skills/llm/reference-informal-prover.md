@@ -1,6 +1,6 @@
 # informal-prover — Solve Math Problems with LLM + 3-Model Verification
 
-Generates a step-by-step solution to a math problem using an LLM backend, then auto-verifies it with a panel of three models (Claude, GPT, Gemini) and refines via Gemini until all three score 1 or the attempt limit is reached.
+Generates a step-by-step solution to a math problem using an LLM backend, then auto-verifies it with a panel of three models (Claude, GPT, Gemini). API failures are ignored; the solution is accepted if at least one verifier returns score 1 and no verifier returns a lower score. If any verifier returns a lower score, Gemini refines the solution until it passes or the attempt limit is reached.
 
 ## CLI Invocation
 
@@ -26,8 +26,9 @@ python skills/cli/informal_prover.py PROBLEM [OPTIONS]
 
 1. Generate an initial solution using `--backend`.
 2. Send the solution to **all three** verifiers (Claude, GPT, Gemini) in parallel. Each returns a detailed evaluation ending with `\boxed{0}`, `\boxed{0.5}`, or `\boxed{1}`.
-3. If every verifier returns `1`, the solution is accepted.
-4. Otherwise, every non-`1` evaluation is concatenated (without model attribution) and passed to Gemini as "Issues We Found". Gemini produces a revised solution and the loop repeats.
+3. Ignore verifiers that fail to return a parseable score because of API, key, dependency, or transient errors.
+4. If at least one verifier returns `1` and no verifier returns `0` or `0.5`, the solution is accepted.
+5. Otherwise, every non-`1` evaluation is concatenated (without model attribution) and passed to Gemini as "Issues We Found". Gemini produces a revised solution and the loop repeats.
 
 ## Output
 
@@ -48,8 +49,8 @@ echo "Prove Fermat's little theorem" | python skills/cli/informal_prover.py - --
 
 ## Notes
 
-- `GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` are **all** required — the verification panel always queries the three models in parallel.
-- `GEMINI_API_KEY` is additionally used for refinement and (when `--backend gemini`) for generation.
+- `GEMINI_API_KEY` is required for refinement and when `--backend gemini` is used for generation.
+- `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` enable GPT and Claude verification. If either verifier fails, its result is ignored unless it returns a parseable score below 1.
 - Use `--file` or stdin for problem text with shell-sensitive characters such as `$`, backticks, quotes, pipes, redirection symbols, Unicode math symbols, or newlines.
 - Increase `--max-attempts` for harder problems; decrease it if you just need a quick first-pass idea.
 - Use `--log-dir` to persist results for review or debugging.

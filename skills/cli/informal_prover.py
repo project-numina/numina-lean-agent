@@ -184,11 +184,11 @@ def _call_claude(prompt: str, model: str, temperature: float) -> tuple[str | Non
     try:
         import anthropic
 
+        del temperature  # Some Claude models reject the temperature parameter.
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
             model=model,
             max_tokens=16384,
-            temperature=temperature,
             messages=[{"role": "user", "content": prompt}],
         )
         usage = response.usage
@@ -222,8 +222,8 @@ def _verify_with_panel(
     """Run claude/gpt/gemini verifications in parallel.
 
     Returns:
-      (all_correct, combined_issues, per_model_verifications,
-       has_evaluation_issue, in_tokens, out_tokens)
+      (accepted, combined_issues, per_model_verifications,
+       has_any_score, in_tokens, out_tokens)
     """
     verify_prompt = VERIFY_PROMPT.format(problem=problem, student_solution=solution)
     callers = {
@@ -248,31 +248,30 @@ def _verify_with_panel(
     out_tok_total = 0
     issues: list[str] = []
     per_model: dict[str, str | None] = {}
-    all_correct = True
-    verifier_failures: list[str] = []
+    passing_scores = 0
+    scored_evaluations = 0
 
     for name, (text, in_tok, out_tok) in results.items():
         in_tok_total += in_tok
         out_tok_total += out_tok
         per_model[name] = text
         if not text:
-            all_correct = False
-            verifier_failures.append(f"{name} verifier failed to produce an evaluation")
+            logger.warning("verify panel %s produced no evaluation; ignoring", name)
             continue
         score = _extract_score(text)
         logger.info("verify panel %s score=%s", name, score)
-        if score == "1":
+        if score is None:
+            logger.warning("verify panel %s produced no parseable score; ignoring", name)
             continue
-        all_correct = False
+        scored_evaluations += 1
+        if score == "1":
+            passing_scores += 1
+            continue
         issues.append(text)
 
-    if issues:
-        combined = "\n\n---\n\n".join(issues)
-    elif verifier_failures:
-        combined = "\n".join(verifier_failures)
-    else:
-        combined = None
-    return all_correct, combined, per_model, bool(issues), in_tok_total, out_tok_total
+    accepted = passing_scores >= 1 and not issues
+    combined = "\n\n---\n\n".join(issues) if issues else None
+    return accepted, combined, per_model, scored_evaluations > 0, in_tok_total, out_tok_total
 
 
 def prove(
@@ -327,7 +326,7 @@ def prove(
             continue
 
         # Verify with panel of three models in parallel
-        all_correct, issues, last_panel, has_evaluation_issue, in_tok, out_tok = _verify_with_panel(
+        accepted, issues, last_panel, has_any_score, in_tok, out_tok = _verify_with_panel(
             math_problem,
             solution,
             temperature,
@@ -338,19 +337,18 @@ def prove(
         total_in_tok += in_tok
         total_out_tok += out_tok
 
-        if all_correct:
+        if accepted:
             logger.info("prove succeeded on attempt %d in_tokens=%d out_tokens=%d", attempt, total_in_tok, total_out_tok)
             result = {"solution": solution, "verification": "correct", "attempts": attempt}
             print(json.dumps(result, ensure_ascii=False))
             _log(log_dir, math_problem, solution, "correct")
             return
 
-        has_evaluation = any(text for text in last_panel.values())
-        if not has_evaluation or not has_evaluation_issue:
-            logger.warning("prove stopped on attempt %d — verifier panel did not produce actionable issues", attempt)
+        if not has_any_score:
+            logger.warning("prove stopped on attempt %d — verifier panel did not produce any score", attempt)
             print(json.dumps({
                 "solution": solution,
-                "verification": f"Verification failed (API error)\n{issues}",
+                "verification": "Verification failed (API error)",
                 "attempts": attempt,
             }, ensure_ascii=False))
             return
