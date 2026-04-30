@@ -123,15 +123,14 @@ Provide **only** the revised solution below.
 
 
 def _call_gemini(prompt: str, model: str, temperature: float) -> tuple[str | None, int, int]:
-    from google import genai
-    from google.genai import types
-
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         logger.error("GEMINI_API_KEY not set")
-        print("Error: Please set GEMINI_API_KEY", file=sys.stderr)
-        sys.exit(1)
+        return None, 0, 0
     try:
+        from google import genai
+        from google.genai import types
+
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
             model=model,
@@ -150,14 +149,13 @@ def _call_gemini(prompt: str, model: str, temperature: float) -> tuple[str | Non
 
 
 def _call_gpt(prompt: str, model: str, temperature: float) -> tuple[str | None, int, int]:
-    from openai import OpenAI
-
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         logger.error("OPENAI_API_KEY not set")
-        print("Error: Please set OPENAI_API_KEY", file=sys.stderr)
-        sys.exit(1)
+        return None, 0, 0
     try:
+        from openai import OpenAI
+
         client = OpenAI(api_key=api_key)
         response = client.responses.create(
             model=model,
@@ -179,14 +177,13 @@ def _call_gpt(prompt: str, model: str, temperature: float) -> tuple[str | None, 
 
 
 def _call_claude(prompt: str, model: str, temperature: float) -> tuple[str | None, int, int]:
-    import anthropic
-
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         logger.error("ANTHROPIC_API_KEY not set")
-        print("Error: Please set ANTHROPIC_API_KEY", file=sys.stderr)
-        sys.exit(1)
+        return None, 0, 0
     try:
+        import anthropic
+
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
             model=model,
@@ -221,10 +218,12 @@ def _verify_with_panel(
     claude_model: str,
     gpt_model: str,
     gemini_model: str,
-) -> tuple[bool, str | None, dict[str, str | None], int, int]:
+) -> tuple[bool, str | None, dict[str, str | None], bool, int, int]:
     """Run claude/gpt/gemini verifications in parallel.
 
-    Returns: (all_correct, combined_issues, per_model_verifications, in_tokens, out_tokens)
+    Returns:
+      (all_correct, combined_issues, per_model_verifications,
+       has_evaluation_issue, in_tokens, out_tokens)
     """
     verify_prompt = VERIFY_PROMPT.format(problem=problem, student_solution=solution)
     callers = {
@@ -237,28 +236,43 @@ def _verify_with_panel(
             name: executor.submit(fn, verify_prompt, model, temperature)
             for name, (fn, model) in callers.items()
         }
-        results = {name: f.result() for name, f in futures.items()}
+        results: dict[str, tuple[str | None, int, int]] = {}
+        for name, future in futures.items():
+            try:
+                results[name] = future.result()
+            except BaseException as e:
+                logger.exception("verifier %s crashed: %s", name, e)
+                results[name] = (None, 0, 0)
 
     in_tok_total = 0
     out_tok_total = 0
     issues: list[str] = []
     per_model: dict[str, str | None] = {}
     all_correct = True
+    verifier_failures: list[str] = []
 
     for name, (text, in_tok, out_tok) in results.items():
         in_tok_total += in_tok
         out_tok_total += out_tok
         per_model[name] = text
+        if not text:
+            all_correct = False
+            verifier_failures.append(f"{name} verifier failed to produce an evaluation")
+            continue
         score = _extract_score(text)
         logger.info("verify panel %s score=%s", name, score)
         if score == "1":
             continue
         all_correct = False
-        if text:
-            issues.append(text)
+        issues.append(text)
 
-    combined = "\n\n---\n\n".join(issues) if issues else None
-    return all_correct, combined, per_model, in_tok_total, out_tok_total
+    if issues:
+        combined = "\n\n---\n\n".join(issues)
+    elif verifier_failures:
+        combined = "\n".join(verifier_failures)
+    else:
+        combined = None
+    return all_correct, combined, per_model, bool(issues), in_tok_total, out_tok_total
 
 
 def prove(
@@ -313,7 +327,7 @@ def prove(
             continue
 
         # Verify with panel of three models in parallel
-        all_correct, issues, last_panel, in_tok, out_tok = _verify_with_panel(
+        all_correct, issues, last_panel, has_evaluation_issue, in_tok, out_tok = _verify_with_panel(
             math_problem,
             solution,
             temperature,
@@ -331,13 +345,24 @@ def prove(
             _log(log_dir, math_problem, solution, "correct")
             return
 
+        has_evaluation = any(text for text in last_panel.values())
+        if not has_evaluation or not has_evaluation_issue:
+            logger.warning("prove stopped on attempt %d — verifier panel did not produce actionable issues", attempt)
+            print(json.dumps({
+                "solution": solution,
+                "verification": f"Verification failed (API error)\n{issues}",
+                "attempts": attempt,
+            }, ensure_ascii=False))
+            return
+
         if issues is None:
-            # All three verifiers failed (no text returned). Treat as fatal verification failure.
-            if attempt == max_attempts:
-                logger.warning("prove exhausted attempts (%d) — all verifiers errored", max_attempts)
-                print(json.dumps({"solution": solution, "verification": "Verification failed (API error)"}, ensure_ascii=False))
-                return
-            continue
+            logger.warning("prove stopped on attempt %d — no verifier issues were produced", attempt)
+            print(json.dumps({
+                "solution": solution,
+                "verification": "Verification failed (API error)",
+                "attempts": attempt,
+            }, ensure_ascii=False))
+            return
 
         if attempt == max_attempts:
             scores = {name: _extract_score(text) for name, text in last_panel.items()}

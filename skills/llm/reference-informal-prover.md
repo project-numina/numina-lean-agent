@@ -11,6 +11,7 @@ python skills/cli/informal_prover.py PROBLEM [OPTIONS]
 | Argument | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PROBLEM` | yes | — | Math problem text. Use `-` to read from stdin |
+| `--file`, `-f` | no | — | Read problem text from a file |
 | `--backend` | no | `gemini` | LLM backend for solution **generation**: `gemini` or `gpt` |
 | `--model` | no | auto | Override generator model. Default: `gemini-3.1-pro-preview` (gemini) or `gpt-5.4-pro` (gpt) |
 | `--temperature` | no | 0.7 | Generation/verification temperature |
@@ -39,6 +40,8 @@ JSON with:
 
 ```bash
 python skills/cli/informal_prover.py "Prove that sqrt(2) is irrational" --backend gemini
+python skills/cli/informal_prover.py --file problem.txt --backend gemini
+python skills/cli/informal_prover.py - --backend gemini < problem.txt
 python skills/cli/informal_prover.py "Prove the AM-GM inequality" --backend gpt --max-attempts 5
 echo "Prove Fermat's little theorem" | python skills/cli/informal_prover.py - --backend gemini --model gemini-2.5-pro
 ```
@@ -47,5 +50,6 @@ echo "Prove Fermat's little theorem" | python skills/cli/informal_prover.py - --
 
 - `GEMINI_API_KEY`, `OPENAI_API_KEY`, and `ANTHROPIC_API_KEY` are **all** required — the verification panel always queries the three models in parallel.
 - `GEMINI_API_KEY` is additionally used for refinement and (when `--backend gemini`) for generation.
+- Use `--file` or stdin for problem text with shell-sensitive characters such as `$`, backticks, quotes, pipes, redirection symbols, Unicode math symbols, or newlines.
 - Increase `--max-attempts` for harder problems; decrease it if you just need a quick first-pass idea.
 - Use `--log-dir` to persist results for review or debugging.
