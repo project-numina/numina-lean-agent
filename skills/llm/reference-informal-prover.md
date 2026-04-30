@@ -1,6 +1,6 @@
-# informal-prover — Solve Math Problems with LLM + Verification
+# informal-prover — Solve Math Problems with LLM + 3-Model Verification
 
-Generates a step-by-step solution to a math problem using an LLM backend, then auto-verifies and refines it in a loop until correct or the attempt limit is reached.
+Generates a step-by-step solution to a math problem using an LLM backend, then auto-verifies it with a panel of three models (Claude, GPT, Gemini). API failures are ignored; the solution is accepted if at least one verifier returns score 1 and no verifier returns a lower score. If any verifier returns a lower score, Gemini refines the solution until it passes or the attempt limit is reached.
 
 ## CLI Invocation
 
@@ -11,30 +11,46 @@ python skills/cli/informal_prover.py PROBLEM [OPTIONS]
 | Argument | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PROBLEM` | yes | — | Math problem text. Use `-` to read from stdin |
-| `--backend` | no | `gemini` | LLM backend: `gemini` or `gpt` |
-| `--model` | no | auto | Model name. Default: `gemini-3.1-pro-preview` (gemini) or `gpt-5.2-pro` (gpt) |
-| `--temperature` | no | 0.7 | Generation temperature |
+| `--file`, `-f` | no | — | Read problem text from a file |
+| `--backend` | no | `gemini` | LLM backend for solution **generation**: `gemini` or `gpt` |
+| `--model` | no | auto | Override generator model. Default: `gemini-3.1-pro-preview` (gemini) or `gpt-5.4-pro` (gpt) |
+| `--temperature` | no | 0.7 | Generation/verification temperature |
 | `--max-attempts` | no | 10 | Max generate+verify+refine cycles |
 | `--log-dir` | no | none | Directory to save results as JSONL |
+| `--claude-verify-model` | no | `claude-opus-4-7` | Claude model used in the verification panel |
+| `--gpt-verify-model` | no | `gpt-5.4-pro` | GPT model used in the verification panel |
+| `--gemini-verify-model` | no | `gemini-3.1-pro-preview` | Gemini model used in the verification panel |
+| `--refine-model` | no | `gemini-3.1-pro-preview` | Gemini model used to refine the solution |
+
+## Verification & Refinement Loop
+
+1. Generate an initial solution using `--backend`.
+2. Send the solution to **all three** verifiers (Claude, GPT, Gemini) in parallel. Each returns a detailed evaluation ending with `\boxed{0}`, `\boxed{0.5}`, or `\boxed{1}`.
+3. Ignore verifiers that fail to return a parseable score because of API, key, dependency, or transient errors.
+4. If at least one verifier returns `1` and no verifier returns `0` or `0.5`, the solution is accepted.
+5. Otherwise, every non-`1` evaluation is concatenated (without model attribution) and passed to Gemini as "Issues We Found". Gemini produces a revised solution and the loop repeats.
 
 ## Output
 
 JSON with:
 - `solution` — the final solution text
-- `verification` — `"correct"` or feedback on what was wrong
+- `verification` — `"correct"` or `"incorrect\n<combined non-1 evaluations>"`
 - `attempts` — number of generate/verify cycles used
 
 ## Examples
 
 ```bash
 python skills/cli/informal_prover.py "Prove that sqrt(2) is irrational" --backend gemini
+python skills/cli/informal_prover.py --file problem.txt --backend gemini
+python skills/cli/informal_prover.py - --backend gemini < problem.txt
 python skills/cli/informal_prover.py "Prove the AM-GM inequality" --backend gpt --max-attempts 5
 echo "Prove Fermat's little theorem" | python skills/cli/informal_prover.py - --backend gemini --model gemini-2.5-pro
 ```
 
 ## Notes
 
-- `GEMINI_API_KEY` is required when using `--backend gemini`.
-- `OPENAI_API_KEY` is required when using `--backend gpt`.
+- `GEMINI_API_KEY` is required for refinement and when `--backend gemini` is used for generation.
+- `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` enable GPT and Claude verification. If either verifier fails, its result is ignored unless it returns a parseable score below 1.
+- Use `--file` or stdin for problem text with shell-sensitive characters such as `$`, backticks, quotes, pipes, redirection symbols, Unicode math symbols, or newlines.
 - Increase `--max-attempts` for harder problems; decrease it if you just need a quick first-pass idea.
 - Use `--log-dir` to persist results for review or debugging.

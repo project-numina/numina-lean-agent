@@ -15,5 +15,6 @@ Use this value for all `--environment` flags in axle commands.
 ## Environment Variables
 - `GEMINI_API_KEY` — Gemini-based tools
 - `OPENAI_API_KEY` — GPT-based tools
+- `ANTHROPIC_API_KEY` — Claude-based tools (informal_prover verifier panel)
 - `AXLE_API_KEY` — all axle commands
 - `LEAN_LEANDEX_API_KEY` — Leandex semantic Mathlib search
