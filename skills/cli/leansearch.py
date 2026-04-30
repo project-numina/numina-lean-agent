@@ -5,7 +5,7 @@ import json
 import os
 import logging
 import sys
-import urllib.parse
+import time
 import urllib.request
 from pathlib import Path
 
@@ -15,6 +15,9 @@ logging.basicConfig(
     handlers=[logging.FileHandler(Path(os.environ.get("CLI_LOG_PATH", Path(__file__).parents[2] / "cli.log")))],
 )
 logger = logging.getLogger(__name__)
+
+
+MAX_ATTEMPTS = 3
 
 
 def search(query: str, num_results: int = 5) -> None:
@@ -35,8 +38,16 @@ def search(query: str, num_results: int = 5) -> None:
             method="POST",
         )
 
-        with urllib.request.urlopen(req, timeout=20) as response:
-            payload = json.loads(response.read())
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=20) as response:
+                    payload = json.loads(response.read())
+                break
+            except Exception:
+                if attempt == MAX_ATTEMPTS:
+                    raise
+                logger.warning("leansearch.search attempt %d/%d failed; retrying", attempt, MAX_ATTEMPTS, exc_info=True)
+                time.sleep(attempt)
 
         # Unwrap the outer list (one entry per query — we only send one).
         results = payload[0] if payload and isinstance(payload, list) else []

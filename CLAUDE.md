@@ -16,4 +16,4 @@ Use this value for all `--environment` flags in axle commands.
 - `GEMINI_API_KEY` — Gemini-based tools
 - `OPENAI_API_KEY` — GPT-based tools
 - `AXLE_API_KEY` — all axle commands
-- `LEANEXPLORE_API_KEY` — leanexplore search (required; falls back to leandex if unset or on error)
+- `LEAN_LEANDEX_API_KEY` — Leandex semantic Mathlib search

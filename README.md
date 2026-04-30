@@ -78,7 +78,7 @@ The CLI skills under `skills/cli/` call external services and need their own cre
 
 ```bash
 export GEMINI_API_KEY=xxx          # Required: discussion_partner, informal_prover (gemini), code_golf
-export LEANEXPLORE_API_KEY=xxx     # Required: leanexplore (semantic Mathlib search)
+export LEAN_LEANDEX_API_KEY=xxx    # Required: Leandex semantic Mathlib search
 export OPENAI_API_KEY=xxx          # Required only if you use informal_prover / discussion_partner with the gpt backend
 export AXLE_API_KEY=xxx            # Optional: only needed for axle commands (verify-proof, disprove, sorry2lemma, ...)
 ```
