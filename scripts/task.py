@@ -69,8 +69,6 @@ class TaskMetadata:
             self.prompt_file = Path(self.prompt_file).resolve()
         if self.result_dir:
             self.result_dir = Path(self.result_dir).resolve()
-        if self.mcp_log_dir:
-            self.mcp_log_dir = Path(self.mcp_log_dir).resolve()
         if self.safe_verify_path:
             self.safe_verify_path = Path(self.safe_verify_path).resolve()
         if self.safe_verify_cwd:
