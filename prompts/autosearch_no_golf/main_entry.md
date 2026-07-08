@@ -1,5 +1,11 @@
-Carefully read the prompts under `prompts/autosearch/subagent_prompts/` (common.md, coordinator.md, proof_agent.md, informal_agent.md, golfer.md).
+Carefully read the prompts under `prompts/autosearch_no_golf/subagent_prompts/` (common.md, coordinator.md, proof_agent.md, informal_agent.md).
 Also read `skills/SKILL.md` and each sub-skill's `SKILL.md` (search, verification, llm, code-transform, sorrifier) so you know which local CLI tools are available and how to invoke them.
+
+> **NO-GOLF MODE (HARD RULE).** This is a no-golf run. Do **NOT** spawn any golfer
+> agent and do **NOT** perform any proof-golfing / simplification / redundancy-removal
+> pass, regardless of proof size. If any subagent prompt mentions golfing, ignore that
+> instruction. Once a lemma compiles with no `sorry`, mark it done and move on — never
+> run a follow-up "simplify" or "golf" step on it.
 
 You should act as coordinator agent to complete the target folder / file.
 

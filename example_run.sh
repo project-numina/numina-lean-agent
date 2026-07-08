@@ -1,6 +1,11 @@
 #!/bin/bash
 # Example: run numina-lean-agent on a folder of .lean files using the
-# autosearch coordinator prompt.
+# autosearch coordinator prompt — NO-GOLF variant (default).
+#
+# This uses prompts/autosearch_no_golf/, which never spawns a golfer agent and
+# never runs any golf / simplify pass on completed proofs. A lemma is done as
+# soon as it compiles with no `sorry`. For the golfing variant, use
+# ./example_run_with_golf.sh instead.
 #
 # Usage:
 #   bash ./example_run.sh [target_folder]
@@ -11,13 +16,15 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
 
 ##############################################################################
-# --- Reference resources (consumed by prompts/autosearch/main_entry.md) ---
+# --- Reference resources (consumed by prompts/autosearch_no_golf/main_entry.md) ---
 # main_entry.md reads this via `echo "$REFERENCE_RESOURCES"` and hands the
 # path(s) to each subagent. Use a colon-separated list for multiple paths.
 # Optional: leave empty or unset if you have no reference files.
 
 # substitute with real example resources path here (or leave empty)
-export REFERENCE_RESOURCES="$REPO_ROOT/references/example_refs"
+# ICML26 heapsort demo: the task README + the original Rust source give the
+# agent context on what the algorithm does and what to prove.
+export REFERENCE_RESOURCES="$REPO_ROOT/ICML26_demo/README.md:$REPO_ROOT/ICML26_demo/rust/src/lib.rs"
 
 # --- Target folder ---
 # The .lean file or folder the agent will work on. Overridden by the
@@ -26,7 +33,7 @@ export REFERENCE_RESOURCES="$REPO_ROOT/references/example_refs"
 # and the project has been built with `lake build`).
 
 # substitute with your target path here
-TARGET_FOLDER="$REPO_ROOT/leanproblems/test"
+TARGET_FOLDER="$REPO_ROOT/ICML26_demo/lean/spec_and_proofs"
 ##############################################################################
 
 # --- Activate Python environment ---
@@ -35,11 +42,12 @@ if [ -f ".venv/bin/activate" ]; then
 fi
 
 
-PROMPT_FILE="prompts/autosearch/main_entry.md"
-RESULT_DIR="results/autosearch_$(date +%Y%m%d_%H%M%S)"
+PROMPT_FILE="prompts/autosearch_no_golf/main_entry.md"
+RESULT_DIR="results/autosearch_nogolf_$(date +%Y%m%d_%H%M%S)"
 MAX_ROUNDS=10
 
 echo "========================================"
+echo "Mode                : NO-GOLF (default)"
 echo "Target folder       : $TARGET_FOLDER"
 echo "Prompt              : $PROMPT_FILE"
 echo "Result dir          : $RESULT_DIR"
