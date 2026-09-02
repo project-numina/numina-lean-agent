@@ -568,6 +568,12 @@ def run_task(task: TaskMetadata) -> TaskResult:
                     print(f"[warn] SafeVerify error: {safe_verify_result.error_message}")
                 if safe_verify_result.output.strip():
                     print(safe_verify_result.output)
+                # SafeVerify is the kernel-level integrity gate: a failed check must
+                # flip the task outcome. Leaving success=True on FAILED would report
+                # false positives in result.json / LiveProveBench summary.csv.
+                if safe_verify_result.ran and not safe_verify_result.success:
+                    end_reason = "SAFE_VERIFY_FAILED"
+                    print(f"[error] SafeVerify failed; marking task unsuccessful")
             else:
                 # Proof didn't compile: skip SafeVerify, just clean up snapshot
                 print(f"\n[info] SafeVerify: skipped (end_reason={end_reason}, proof did not compile)")
