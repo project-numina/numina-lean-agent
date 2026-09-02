@@ -194,73 +194,33 @@ class StatementTracker:
                 print(f"[info] Restored file {f}")
                 restored_files.add(f)
         
-        # Now restore the specific statement changes for each file
-        # Skip files that were restored (they already have all statements)
+        # Restore modified/removed statements by rewriting the file from the
+        # captured original bytes. Replacing LeanCodeParser "cleaned" block
+        # text into the on-disk file is a silent no-op whenever comments,
+        # blank lines, or `:=` spacing differ from the cleaned form — which
+        # is the common MiniF2f / agent-edited case. Full-file restore is
+        # already used for deleted files above; use it for integrity too.
         for f, file_changes in changes_by_file.items():
-            # Skip if this file was deleted and restored
             if f in restored_files:
                 continue
-            
-            if not f.exists():
+
+            initial_content = self.initial_file_contents.get(f)
+            if not initial_content:
                 continue
-                
-            initial_statements = self.initial_snapshots.get(f, {})
-            initial_content = self.initial_file_contents.get(f, "")
-            
-            if not initial_statements or not initial_content:
+
+            relevant = [c for c in file_changes if c.change_type in ("modified", "removed")]
+            if not relevant:
                 continue
-            
-            current_content = f.read_text(encoding="utf-8")
-            new_content = current_content
-            
-            # Parse current content to find blocks
-            parser = LeanCodeParser(current_content)
-            current_blocks = parser.extract_all_blocks(keys=["theorem", "lemma"], allow_overlap=False)
-            
-            # Build a map of current theorem/lemma names to their block text
-            current_block_map = {}
-            for block in current_blocks:
-                name = block.get("info", {}).get("name")
-                if name:
-                    block_text = "\n".join(block.get("lines", []))
-                    current_block_map[name] = block_text
-            
-            for change in file_changes:
-                if change.change_type == "removed":
-                    # Statement was removed, need to restore it
-                    if change.name in initial_statements:
-                        original_stmt = initial_statements[change.name]
-                        # Add the statement with a sorry proof
-                        new_content = new_content + "\n\n" + original_stmt + " := by sorry"
-                        print(f"[info] Restored removed statement '{change.name}' in {f}")
-                
-                elif change.change_type == "modified":
-                    # Statement was modified, restore to original
-                    if change.name in initial_statements and change.name in current_block_map:
-                        original_stmt = initial_statements[change.name]
-                        current_block_text = current_block_map[change.name]
-                        
-                        # The current block includes the proof, we need to replace just the statement part
-                        # Get the statement from info
-                        parser_orig = LeanCodeParser(initial_content)
-                        orig_blocks = parser_orig.extract_all_blocks(keys=["theorem", "lemma"], allow_overlap=False)
-                        
-                        # Find the original block
-                        orig_block_text = None
-                        for block in orig_blocks:
-                            if block.get("info", {}).get("name") == change.name:
-                                orig_block_text = "\n".join(block.get("lines", []))
-                                break
-                        
-                        if orig_block_text:
-                            # Replace the current block with the original block
-                            new_content = new_content.replace(current_block_text, orig_block_text)
-                            print(f"[info] Restored modified statement '{change.name}' in {f}")
-            
-            # Write back if content changed
-            if new_content != current_content:
-                f.write_text(new_content, encoding="utf-8")
-                print(f"[info] Updated {f} with restored statements")
+
+            current_content = f.read_text(encoding="utf-8") if f.exists() else ""
+            if current_content == initial_content:
+                print(f"[info] {f} already matches initial content; nothing to restore")
+                continue
+
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(initial_content, encoding="utf-8")
+            names = ", ".join(c.name for c in relevant)
+            print(f"[info] Restored {f} to initial content (statements: {names})")
 
 
 def extract_claude_usage(claude_result: Optional[dict]) -> Optional[dict]:

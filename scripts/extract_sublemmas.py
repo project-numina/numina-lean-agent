@@ -5,6 +5,16 @@ from typing import Any
 DOT_KEYS = [".", "·"]
 DOT_KEYS_TUPLE = (".", "·")
 
+# Leading modifiers that may precede theorem/lemma (and attributes).
+_DECL_MODIFIERS = (
+    "private",
+    "protected",
+    "public",
+    "noncomputable",
+    "unsafe",
+    "partial",
+)
+
 
 # ====================================================
 # parser
@@ -52,6 +62,35 @@ class LeanCodeParser:
 
     def get_indent(self, line: str) -> int:
         return len(line) - len(line.lstrip(" "))
+
+    @staticmethod
+    def strip_leading_attrs_and_modifiers(line: str) -> str:
+        """
+        Strip leading `@[...]` attributes and declaration modifiers so the
+        first token is the real keyword (theorem / lemma / def / ...).
+
+        Examples:
+            '@[simp] theorem foo : True'  -> 'theorem foo : True'
+            'private theorem bar : True'  -> 'theorem bar : True'
+            '@[simp] private noncomputable theorem baz' -> 'theorem baz'
+        """
+        s = line.lstrip()
+        # Drop one or more leading attribute blocks: @[...]
+        while s.startswith("@"):
+            # Find matching ']' for the attribute list (no nested brackets in attrs)
+            end = s.find("]")
+            if end < 0:
+                break
+            s = s[end + 1 :].lstrip()
+        # Drop known modifiers (may be stacked)
+        while True:
+            tokens = s.split(None, 1)
+            if not tokens or tokens[0] not in _DECL_MODIFIERS:
+                break
+            s = tokens[1] if len(tokens) > 1 else ""
+        # Preserve original indent of the declaration line
+        indent = len(line) - len(line.lstrip(" "))
+        return (" " * indent + s) if s else line
 
     def extract_headers(self) -> dict:
         """
@@ -325,12 +364,18 @@ class LeanCodeParser:
         if start_line_index >= len(self.cleaned_lines):
             return None
 
-        start_line = self.cleaned_lines[start_line_index]
-        key = start_line.split()[0]
+        raw_start_line = self.cleaned_lines[start_line_index]
+        # Strip @[...] / private / protected / ... so `@[simp] theorem` is found
+        start_line = self.strip_leading_attrs_and_modifiers(raw_start_line)
+        tokens = start_line.split()
+        if not tokens:
+            return None
+        key = tokens[0]
         if key not in keys:
             return None
 
-        start_indent = self.get_indent(start_line)
+        start_indent = self.get_indent(raw_start_line)
+        # Keep the stripped form so name/statement parsing sees `theorem ...`
         block_lines = [start_line]
         i = start_line_index + 1
         while i < len(self.cleaned_lines):
