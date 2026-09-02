@@ -2,15 +2,36 @@
 Lean file checking utilities.
 """
 
+import re
 import subprocess
 from pathlib import Path
 from typing import List, Tuple
 from multiprocessing import Pool, cpu_count
 
+# Match Lean diagnostic headers: path:line:col: severity: message
+DIAG_RE = re.compile(
+    r"^(?P<file>.+?):(?P<line>\d+):(?P<col>\d+):\s*(?P<sev>error|warning|info)(?:\([^)]*\))?:\s*(?P<msg>.+)",
+    re.MULTILINE,
+)
+
+# Skip Lake package / VCS trees when scanning a project root.
+_SKIP_DIR_NAMES = {".lake", "lake-packages", ".git"}
+
+# Lean sorry warnings that mean the goal is not fully proven.
+_SORRY_WARNING_MARKERS = (
+    "declaration uses 'sorry'",
+    'declaration uses "sorry"',
+    "uses 'sorry'",
+    'uses "sorry"',
+)
+
 
 def find_lean_files(folder_path: str | Path) -> List[Path]:
     """
     Recursively find all .lean files in a folder.
+
+    Skips `.lake/`, `lake-packages/`, and `.git/` trees so a Lake project
+    root does not fan out into Mathlib / dependency sources after `lake build`.
 
     Args:
         folder_path: Path to the folder to search
@@ -27,8 +48,11 @@ def find_lean_files(folder_path: str | Path) -> List[Path]:
 
     lean_files = []
     for file_path in folder.rglob("*.lean"):
-        if file_path.is_file():
-            lean_files.append(file_path)
+        if not file_path.is_file():
+            continue
+        if any(part in _SKIP_DIR_NAMES for part in file_path.parts):
+            continue
+        lean_files.append(file_path)
 
     return sorted(lean_files)
 
@@ -51,6 +75,36 @@ def find_lean_project_root(file_path: Path) -> Path:
         current = current.parent
     # If not found, return file's parent directory
     return file_path.parent if file_path.is_file() else file_path
+
+
+def classify_lean_output(stdout: str, stderr: str, returncode: int) -> Tuple[bool, bool]:
+    """
+    Classify `lake env lean` output using diagnostic severities.
+
+    Avoids brittle substring checks (`"error" in text`) that false-positive on
+    identifiers like `errorMsg` or paths containing the word error, and that
+    false-positive sorry on any mention of the tactic name outside a warning.
+    """
+    combined = f"{stdout}\n{stderr}"
+    has_error = returncode != 0
+    has_sorry_warning = False
+
+    for match in DIAG_RE.finditer(combined):
+        sev = match.group("sev")
+        msg = match.group("msg").lower()
+        if sev == "error":
+            has_error = True
+        elif sev == "warning" and any(m in msg for m in _SORRY_WARNING_MARKERS):
+            has_sorry_warning = True
+        elif sev == "warning" and "sorry" in msg and "declaration uses" in msg:
+            has_sorry_warning = True
+
+    # Fallback: unsolved goals are errors in Lean, but some older toolchains
+    # may surface residual sorry only as a warning without the exact phrase.
+    if not has_sorry_warning and "declaration uses 'sorry'" in combined.lower():
+        has_sorry_warning = True
+
+    return has_error, has_sorry_warning
 
 
 def check_lean_file(file_path: Path) -> Tuple[bool, bool, str, str]:
@@ -78,17 +132,9 @@ def check_lean_file(file_path: Path) -> Tuple[bool, bool, str, str]:
 
         stdout = result.stdout
         stderr = result.stderr
-
-        # Check for errors
-        has_error = (
-            "error" in stdout.lower()
-            or "error" in stderr.lower()
-            or result.returncode != 0
+        has_error, has_sorry_warning = classify_lean_output(
+            stdout, stderr, result.returncode
         )
-
-        # Check for sorry warnings
-        has_sorry_warning = "sorry" in stdout.lower() or "sorry" in stderr.lower()
-
         return has_error, has_sorry_warning, stdout, stderr
 
     except subprocess.TimeoutExpired:
