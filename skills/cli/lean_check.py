@@ -77,6 +77,29 @@ def extract_failed_declarations(messages: list[dict]) -> list[str]:
     return sorted(failed)
 
 
+_SORRY_WARNING_MARKERS = (
+    "declaration uses 'sorry'",
+    'declaration uses "sorry"',
+    "uses 'sorry'",
+    'uses "sorry"',
+)
+
+
+def has_sorry_warning(messages: list[dict], combined: str = "") -> bool:
+    """True when Lean reports that a declaration still uses sorry."""
+    for msg in messages:
+        if msg["severity"] != "warning":
+            continue
+        data = msg["data"].lower()
+        if any(m in data for m in _SORRY_WARNING_MARKERS):
+            return True
+        if "sorry" in data and "declaration uses" in data:
+            return True
+    if "declaration uses 'sorry'" in combined.lower():
+        return True
+    return False
+
+
 def check(file_path: Path, timeout: int = 120) -> dict:
     """Run `lake env lean` on a file and return axle-compatible result."""
     project_root = find_project_root(file_path)
@@ -92,12 +115,14 @@ def check(file_path: Path, timeout: int = 120) -> dict:
     except subprocess.TimeoutExpired:
         return {
             "okay": False,
+            "has_sorry": False,
             "lean_messages": [{"severity": "error", "data": f"Timed out after {timeout}s", "line": 0, "column": 0}],
             "failed_declarations": [],
         }
     except Exception as e:
         return {
             "okay": False,
+            "has_sorry": False,
             "lean_messages": [{"severity": "error", "data": str(e), "line": 0, "column": 0}],
             "failed_declarations": [],
         }
@@ -105,10 +130,15 @@ def check(file_path: Path, timeout: int = 120) -> dict:
     combined = result.stdout + "\n" + result.stderr
     messages = parse_diagnostics(combined)
     has_error = any(m["severity"] == "error" for m in messages) or result.returncode != 0
+    sorry = has_sorry_warning(messages, combined)
     failed = extract_failed_declarations(messages)
 
+    # Prompts require COMPLETE only when lean_check is okay *and* sorry-free.
+    # Returning okay=true with a sorry warning lets the agent emit COMPLETE
+    # prematurely (and wastes a round when the runner later rejects it).
     return {
-        "okay": not has_error,
+        "okay": not has_error and not sorry,
+        "has_sorry": sorry,
         "lean_messages": messages,
         "failed_declarations": failed,
     }
@@ -122,12 +152,17 @@ def main() -> None:
 
     file_path = args.file.resolve()
     if not file_path.exists():
-        print(json.dumps({"okay": False, "lean_messages": [{"severity": "error", "data": f"File not found: {file_path}", "line": 0, "column": 0}], "failed_declarations": []}), flush=True)
+        print(json.dumps({"okay": False, "has_sorry": False, "lean_messages": [{"severity": "error", "data": f"File not found: {file_path}", "line": 0, "column": 0}], "failed_declarations": []}), flush=True)
         sys.exit(1)
 
     logger.info("lean_check called: file=%s timeout=%d", file_path, args.timeout_seconds)
     result = check(file_path, timeout=args.timeout_seconds)
-    logger.info("lean_check result: okay=%s errors=%d", result["okay"], len([m for m in result["lean_messages"] if m["severity"] == "error"]))
+    logger.info(
+        "lean_check result: okay=%s has_sorry=%s errors=%d",
+        result["okay"],
+        result.get("has_sorry"),
+        len([m for m in result["lean_messages"] if m["severity"] == "error"]),
+    )
 
     print(json.dumps(result, indent=2, ensure_ascii=False), flush=True)
     sys.exit(0 if result["okay"] else 1)

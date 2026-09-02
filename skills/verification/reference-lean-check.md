@@ -16,7 +16,8 @@ python skills/cli/lean_check.py FILE [OPTIONS]
 ## Output
 
 Returns JSON:
-- `okay` (bool) — whether the file compiled without errors
+- `okay` (bool) — true only when the file compiled with no errors **and** no `declaration uses 'sorry'` warnings (COMPLETE requires both)
+- `has_sorry` (bool) — whether Lean reported a sorry warning on a declaration
 - `lean_messages` — list of errors, warnings, and infos with line numbers (`file_name`, `line`, `column`, `severity`, `data`)
 - `failed_declarations` — list of theorem/definition names that failed
 
