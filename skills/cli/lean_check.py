@@ -117,7 +117,7 @@ def check(file_path: Path, timeout: int = 120) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Local Lean compile check (lake env lean)")
     parser.add_argument("file", type=Path, help="Lean file path to check")
-    parser.add_argument("--timeout-seconds", type=int, default=300, help="Max execution time (default: 120)")
+    parser.add_argument("--timeout-seconds", type=int, default=120, help="Max execution time (default: 120)")
     args = parser.parse_args()
 
     file_path = args.file.resolve()
