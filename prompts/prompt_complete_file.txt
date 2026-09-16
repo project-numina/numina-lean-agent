@@ -1,6 +1,6 @@
 Complete the target Lean theorem file, making it sorry-free and ensuring it compiles without errors.
 
-Use `python skills/cli/diagnostic.py FILE` to verify the file. Errors mean `"has_error": true` or severity `"error"` in the response.
+Use `python skills/cli/diagnostic.py FILE` to verify the file. Errors mean `okay: false` or severity `"error"` in the response.
 
 IMPORTANT:
 - Verify the file again after each update using `python skills/cli/diagnostic.py`.
