@@ -429,7 +429,7 @@ def create_statement_with_lemmas(
     if len(other) > 0:
         final_other_set.add(other)
     final_import_set = final_import_set.union(headers["import_list"])
-    final_open_set = final_open_set.union(headers["open_list"])
+    final_open_set = final_open_set.union(headers["open_lines"])
     final_set_option_set = final_set_option_set.union(headers["set_option_list"])
     final_main_theorem_codes = ["\n".join(block["lines"]) for block in blocks]
 
@@ -442,7 +442,7 @@ def create_statement_with_lemmas(
         if len(other) > 0:
             final_other_set.add(other)
         final_import_set = final_import_set.union(headers["import_list"])
-        final_open_set = final_open_set.union(headers["open_list"])
+        final_open_set = final_open_set.union(headers["open_lines"])
         final_set_option_set = final_set_option_set.union(headers["set_option_list"])
         for block in blocks:
             raw = "\n".join(block["lines"])
@@ -462,9 +462,8 @@ def create_statement_with_lemmas(
         final_code += "\n"
 
     if len(final_open_set) > 0:
-        final_code += "open"
-        for x in sorted(final_open_set):
-            final_code += f" {x}"
+        for command in sorted(final_open_set):
+            final_code += command.strip() + "\n"
         final_code += "\n"
 
     if len(final_other_set) > 0:
