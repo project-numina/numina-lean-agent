@@ -79,11 +79,13 @@ def analyze_cli_log(log_path: str | Path, out_dir: str | Path) -> dict:
             if not tool:
                 continue
 
-            if "called" in msg:
+            # Arguments can contain event words; only inspect the log prefix.
+            event = msg.split(":", 1)[0]
+            if re.search(r"\bcalled\b", event):
                 stats[tool]["called"] += 1
-            if "succeeded" in msg:
+            if re.search(r"\bsucceeded\b", event):
                 stats[tool]["ok"] += 1
-            elif level in ("ERROR", "WARNING") or "failed" in msg or "exhausted" in msg:
+            elif level in ("ERROR", "WARNING") or re.search(r"\b(failed|exhausted)\b", event):
                 stats[tool]["fail"] += 1
 
     total = {"called": 0, "ok": 0, "fail": 0}
