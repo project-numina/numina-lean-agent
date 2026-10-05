@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, Optional, List, TYPE_CHECKING
 import os
+from uuid import uuid4
 
 if TYPE_CHECKING:
     from .statement_tracker import RoundResult, StatementChange
@@ -59,7 +60,7 @@ class TaskMetadata:
         if not self.task_id:
             timestamp = self.created_at.strftime("%Y%m%d_%H%M%S")
             target_name = Path(self.target_path).stem
-            self.task_id = f"{self.task_type}_{target_name}_{timestamp}"
+            self.task_id = f"{self.task_type}_{target_name}_{timestamp}_{uuid4().hex}"
 
         # Normalize paths
         self.target_path = Path(self.target_path).resolve()
