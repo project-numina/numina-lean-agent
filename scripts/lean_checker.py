@@ -43,6 +43,7 @@ def find_lean_project_root(file_path: Path) -> Path:
     Returns:
         Project root path, or the file's parent if not found
     """
+    file_path = file_path.resolve()
     current = file_path.parent if file_path.is_file() else file_path
     while current != current.parent:  # Until reaching root
         lean_toolchain = current / "lean-toolchain"
@@ -64,6 +65,9 @@ def check_lean_file(file_path: Path) -> Tuple[bool, bool, str, str]:
         (has_error, has_sorry_warning, stdout, stderr)
     """
     try:
+        # Resolve before changing cwd so relative sources still refer to the same file.
+        file_path = file_path.resolve()
+
         # Find project root containing lean-toolchain
         project_root = find_lean_project_root(file_path)
 
